@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="gray">#4D4D4D</color>
+    <color name="red">#FFFF0000</color>
+    <color name="blue">#FF0000FF</color>
+    <color name="green">#FF00FF00</color>
+    <color name="yellow">#FFFFEB3B</color>
+    <color name="orange">#DD2C00</color>
+    <color name="purple">#FF800080</color>
+    <color name="pink">#FFFFC0CB</color>
+    <color name="brown">#FFA52A2A</color>
+    <color name="teal">#FF008080</color>
+    <color name="cyan">#FF00FFFF</color>
+    <color name="lime">#FF00FF00</color>
+    <color name="magenta">#FFFF00FF</color>
+    <color name="maroon">#FF800000</color>
+    <color name="navy">#FF000080</color>
+    <color name="olive">#FF808000</color>
+    <color name="silver">#FFC0C0C0</color>
+    <color name="gold">#FFFFD700</color>
+    <color name="aqua">#FF00FFFF</color>
+    <color name="fuchsia">#FFFF00FF</color>
+    <color name="limegreen">#FF32CD32</color>
+    <color name="mediumaquamarine">#FF66CDAA</color>
+    <color name="mediumpurple">#FF9370DB</color>
+    <color name="mediumslateblue">#FF7B68EE</color>
+    <color name="mediumspringgreen">#FF00FA9A</color>
+    <color name="mediumturquoise">#FF48D1CC</color>
+    <color name="midnightblue">#FF191970</color>
+    <color name="navajowhite">#FFFFDEAD</color>
+    <color name="oldlace">#FFFFF5E6</color>
+    <color name="olivedrab">#FF6B8E23</color>
+    <color name="palegoldenrod">#FFFFEFD5</color>
+    <color name="seagreen">#FF2E8B57</color>
+    <color name="snow">#FFFFFAFA</color>
+    <color name="tan">#FFFFF5BF</color>
+    <color name="thistle">#FFFFD8B1</color>
+    <color name="yellowgreen">#FF9ACD32</color>
+    <color name="antiquewhite">#FFFFEBCD</color>
+    <color name="aquamarine">#FF7FFFD4</color>
+    <color name="azure">#FFFFF0F0</color>
+    <color name="beige">#FFF5F5DC</color>
+
+
+
+</resources>
