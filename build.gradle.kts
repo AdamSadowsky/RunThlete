@@ -2,4 +2,15 @@
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.google.gms.google.services) apply false
+}
+
+buildscript {
+    repositories {
+        google()  // Required for Firebase and Google services
+        mavenCentral()
+    }
+    dependencies {
+        classpath(libs.google.services)
+    }
 }
