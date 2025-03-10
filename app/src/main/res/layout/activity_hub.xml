@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".hubActivity">
+    tools:context=".hubActivity"
+    android:background="@drawable/login_background">
 
     <TextView
         android:id="@+id/userGreeting"
@@ -17,17 +18,17 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/backButton"
+        android:id="@+id/runningButton"
         style="@style/loginButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="64dp"
         android:layout_marginTop="48dp"
         android:layout_marginEnd="64dp"
-        android:text="@string/backButton"
+        android:text="@string/running"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/userGreeting" />
+        app:layout_constraintTop_toBottomOf="@id/weightLayout" />
 
     <Button
         android:id="@+id/logoutButton"
@@ -40,7 +41,36 @@
         android:text="@string/logout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/backButton" />
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/weightLayout"
+        android:layout_width="match_parent"
+        android:layout_height="84dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginEnd="16dp"
+        app:boxStrokeWidth="0dp"
+        app:counterTextColor="@color/black"
+        app:helperText="*Required"
+        app:helperTextEnabled="true"
+        app:helperTextTextColor="@color/red"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/logoutButton">
+
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/weightInput"
+            style="@style/infoInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/weight"
+            android:inputType="number"
+            android:lines="1"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

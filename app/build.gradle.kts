@@ -1,6 +1,9 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
 }
 
 android {
@@ -34,6 +37,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
+// Load API key from local.properties
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(localPropertiesFile.inputStream())
+    }
+
+    android {
+        defaultConfig {
+            manifestPlaceholders["MAPS_API_KEY"] = localProperties.getProperty("MAPS_API_KEY") ?: "YOUR_DEFAULT_API_KEY"
+        }
+    }
 }
 
 dependencies {
@@ -46,6 +62,8 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
+    implementation(libs.play.services.location)
+    implementation(libs.play.services.maps)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

@@ -14,6 +14,9 @@ materialVersion = "1.12.0"
 firebaseFirestore = "25.1.2"
 navigationFragment = "2.8.8"
 navigationUi = "2.8.8"
+playServicesLocation = "21.3.0"
+googleAndroidLibrariesMapsplatformSecretsGradlePlugin = "2.0.1"
+playServicesMaps = "19.1.0"
 
 [libraries]
 google-services = { module = "com.google.gms:google-services", version.ref = "googleServices" }
@@ -29,8 +32,11 @@ material-v1110 = { module = "com.google.android.material:material", version.ref 
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+google-android-libraries-mapsplatform-secrets-gradle-plugin = { id = "com.google.android.libraries.mapsplatform.secrets-gradle-plugin", version.ref = "googleAndroidLibrariesMapsplatformSecretsGradlePlugin" }
