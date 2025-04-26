@@ -7,21 +7,17 @@ plugins {
 }
 
 android {
-    namespace = "com.example.runthlete"
+    namespace = "com.company.runthlete"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.runthlete"
+        applicationId = "com.company.runthlete"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildFeatures{
-        viewBinding = true
+        testInstrumentationRunner = "androidx.company.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -33,6 +29,11 @@ android {
             )
         }
     }
+
+    buildFeatures{
+        viewBinding = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -64,6 +65,9 @@ dependencies {
     implementation(libs.navigation.ui)
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

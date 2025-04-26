@@ -2,7 +2,11 @@
     <!-- Base application theme -->
     <style name="Base.Theme.RunThlete" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- App theme customization -->
+
         <item name="android:textSize">18sp</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
     </style>
 
     <!-- Application theme -->
@@ -50,5 +54,10 @@
         <item name="android:background">@drawable/login_password_background</item>
         <item name="backgroundTint">@null</item>
         <item name="counterEnabled">true</item>
+    </style>
+
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_in</item>
+        <item name="android:windowExitAnimation">@anim/slide_out</item>
     </style>
 </resources>
