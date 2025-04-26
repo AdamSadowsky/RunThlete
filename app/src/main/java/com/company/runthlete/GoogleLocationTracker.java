@@ -1,4 +1,4 @@
-package com.example.runthlete;
+package com.company.runthlete;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -8,7 +8,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -19,10 +18,6 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
-import com.google.android.gms.maps.model.LatLng;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class GoogleLocationTracker {
     //Location service objects
@@ -36,7 +31,6 @@ public class GoogleLocationTracker {
     private boolean isRunning = false; // Track if the timer is running
     private static HandlerThread locationHandlerThread;
     private static Handler locationHandler;
-    private List<LatLng> runPath = new ArrayList<>();
     private Handler logHandler = new Handler();
     private Runnable logRunnable;
 
@@ -65,10 +59,8 @@ public class GoogleLocationTracker {
 
                     if (firstKnownLocation == null ) {
                         firstKnownLocation = location;//Set first location
-                        Log.d("Debug", "First known location initiated");
                     }
-                    lastKnownLocation = location; // Update last known location to current location
-                        Log.d("Location", "Last known location: " + location.getLatitude() + ", " + location.getLongitude());//Continuously updates location
+                        lastKnownLocation = location; // Update last known location to current location
                     // Notify the listener so the UI can update
                     if (updateListener != null) {
                         updateListener.updateUi(location);//Notify the listener so the UI can update
@@ -91,8 +83,6 @@ public class GoogleLocationTracker {
                     if (lastKnownLocation != null) {
                         lastLocation = lastKnownLocation.getLatitude() + "," + lastKnownLocation.getLongitude();
                     }
-
-                    Log.d("TrackerLog", "Last Location: " + lastLocation);
 
                     logHandler.postDelayed(this, 2000); // Re-run in 2 seconds
                 }
@@ -118,21 +108,24 @@ public class GoogleLocationTracker {
             fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                     .addOnSuccessListener(location -> {
                 if (location != null) {
-                    Log.d("Location", "Tracking initiated");
                     firstKnownLocation = location;
                     lastKnownLocation = location;
                     isRunning = true;
-                    fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, locationHandler.getLooper());
-                    Log.d("Location", "Location: " + firstKnownLocation); } else { Log.d("Location", "Location null");
-                    Toast.makeText(context, "Waiting for GPS... Please wait before starting.", Toast.LENGTH_SHORT).show();
-                }
+                    if (locationHandler != null) {
+                        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, locationHandler.getLooper());
+                    } else {
+                        Log.w("Location", "Location handler is null; cannot request location updates");
+                    }
+                    } else {
+                        Log.d("Location", "Location null");
+                        Toast.makeText(context, "Waiting for GPS... Please wait before starting.", Toast.LENGTH_SHORT).show();
+                    }
                     });
         }
         else { // If we already have a location, start tracking immediately
             isRunning = true;
             fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, locationHandler.getLooper());
         }
-        Log.d("DEBUG", "startTracking() finished execution");
         logHandler.post(logRunnable);
     }
 
@@ -141,6 +134,7 @@ public class GoogleLocationTracker {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback);
         }
         if (locationHandlerThread != null) {
+            locationHandler.removeCallbacksAndMessages(null);
             locationHandlerThread.quitSafely();
             locationHandlerThread = null;
             locationHandler = null;

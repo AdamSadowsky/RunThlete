@@ -1,4 +1,4 @@
-package com.example.runthlete;
+package com.company.runthlete;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -27,7 +27,7 @@ public class forgotPasswordActivity extends AppCompatActivity {
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(forgotPasswordActivity.this, MainActivity.class);
+                Intent i = new Intent(forgotPasswordActivity.this, com.company.runthlete.MainActivity.class);
                 startActivity(i);
             }
             });

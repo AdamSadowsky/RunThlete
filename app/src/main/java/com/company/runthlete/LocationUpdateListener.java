@@ -1,4 +1,4 @@
-package com.example.runthlete;
+package com.company.runthlete;
 
 import android.location.Location;
 

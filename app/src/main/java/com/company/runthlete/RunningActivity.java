@@ -1,4 +1,4 @@
-package com.example.runthlete;
+package com.company.runthlete;
 
 import android.content.Context;
 import android.content.Intent;
@@ -21,8 +21,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class RunningActivity extends AppCompatActivity implements LocationUpdateListener{
 
@@ -44,6 +50,8 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
     private float userWeightKg;
     private long lastUpdateTime = 0;
 
+    FirebaseAuth fAuth;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +67,7 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
         initViews();
 
         // Retrieve the weight passed from hubActivity
-        userWeightKg = getIntent().getFloatExtra("userWeight", 0f) / 2.20462f;
+        userWeightKg = getIntent().getIntExtra("userWeight", 0) / 2.20462f;
 
         //Initialize location tracker
         locationTracker = new GoogleLocationTracker(this);
@@ -131,17 +139,20 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
                 pauseButton.setEnabled(false); // Disable pause since tracking is permanently stopped
                 isRunning = false;
                 //Navigates user to post run page with their run analytics and path
-                    Intent i = new Intent(RunningActivity.this, MapsActivity.class);
+                    Intent i = new Intent(RunningActivity.this, hubActivity.class);
+                    PostRunFragment.runPath = runPath;
+                    i.putExtra("isRunning", isRunning);
                     i.putExtra("startLat", firstKnownLocation.getLatitude());
                     i.putExtra("startLng", firstKnownLocation.getLongitude());
                     i.putExtra("lastLat", lastKnownLocation.getLatitude());
                     i.putExtra("lastLng", lastKnownLocation.getLongitude());
-                    i.putParcelableArrayListExtra("runPath", new ArrayList<>(runPath));
                     i.putExtra("calories", uiMetrics.getCaloriesBurned());
                     i.putExtra("avgPace", uiMetrics.getAvgPace());
                     i.putExtra("steps", uiMetrics.getSteps());
                     i.putExtra("totalDistance", uiMetrics.getTotalDistance());
-                    i.putExtra("elapsedTime", uiMetrics.getTime());
+                    i.putExtra("hours", uiMetrics.getHours());
+                    i.putExtra("minutes", uiMetrics.getMinutes());
+                    i.putExtra("seconds", uiMetrics.getSeconds());
                     startActivity(i);
                     finish();
                 } else {
@@ -182,6 +193,8 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
         if (!isRunning) {
             return;
         }
+
+        runPath.add(new LatLng(location.getLatitude(), location.getLongitude()));
 
         long currentTime = System.currentTimeMillis();
         //Prevents UI from updating too frequently
@@ -244,6 +257,19 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        uiMetrics.shutdownExecutor(); //Shut down the executor
+        if (uiMetrics != null) {
+            uiMetrics.shutdownExecutor(); //Shut down the executor
+        }
     }
+
+        @Override
+        protected void onPause() {
+            super.onPause();
+            if(locationTracker != null){
+                locationTracker.stopTracking();
+            }
+            if (uiMetrics != null) {
+                uiMetrics.shutdownExecutor(); //Shut down the executor
+            }
+        }
 }

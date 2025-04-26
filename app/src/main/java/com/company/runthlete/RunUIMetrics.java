@@ -1,4 +1,4 @@
-package com.example.runthlete;
+package com.company.runthlete;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -11,11 +11,10 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.widget.TextView;
 
-import com.google.android.gms.maps.model.LatLng;
-
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 public class RunUIMetrics {
 
@@ -35,6 +34,9 @@ public class RunUIMetrics {
 
     private Handler timeHandler = new Handler();// Handler for updating the time
     private long time = 0L;
+    private long hours = 0L;
+    private long minutes = 0L;
+    private long seconds = 0L;
     private long startTime = 0L;
     private long pauseTime = 0L;
     private long previousUpdateTime = 0L;// Used to calculate time difference between updates
@@ -145,9 +147,9 @@ public class RunUIMetrics {
 
     //Updates and sets the time text
     private void updateTimeUI(long time) {
-        long seconds = (time / 1000) % 60;
-        long minutes = (time / (1000 * 60)) % 60;
-        long hours = (time / (1000 * 60 * 60));
+        seconds = (time / 1000) % 60;
+        minutes = (time / (1000 * 60)) % 60;
+        hours = (time / (1000 * 60 * 60));
         this.time = time;
         String timeText = String.format(Locale.getDefault(), context.getString(R.string.time), hours, minutes, seconds);
         timeView.setText(timeText);
@@ -158,6 +160,12 @@ public class RunUIMetrics {
     public void updateUIData(Location location) {
         if (!isRunning || location == null) return;
 
+        if (backgroundExecutor.isShutdown()) {
+            return;
+        }
+
+        try {
+            backgroundExecutor.execute(() -> {
         if (locationTracker.getFirstKnownLocation() == null) {
             Log.d("RunUIMetrics", "Initial GPS fix not acquired yet. Skipping UI update.");
             new Handler(context.getMainLooper()).postDelayed(() -> updateUIData(location), 1000);
@@ -166,57 +174,64 @@ public class RunUIMetrics {
 
         long elapsedMillis = SystemClock.elapsedRealtime() - startTime;
 
-        //Calculate distance in meters if previous location is available
-        if (previousLocation != null) {
-            float delta = previousLocation.distanceTo(location); // in meters
-            totalDistanceMeters += delta;
-            Log.d("RunUIMetrics", "Previous: (" + previousLocation.getLatitude() + ", " + previousLocation.getLongitude() +
-                    "), Current: (" + location.getLatitude() + ", " + location.getLongitude() +
-                    "), Delta: " + delta + " m, Total meters: " + totalDistanceMeters);
-        }
-        previousLocation = location;// Update the previous location for the next iteration
+        if (elapsedMillis < 3000) {
+            return;
+        } else {
+            //Calculate distance in meters if previous location is available
+            if (previousLocation != null) {
+                float delta = previousLocation.distanceTo(location); // in meters
+                totalDistanceMeters += delta;
+            }
+            previousLocation = location;// Update the previous location for the next iteration
 
-        float speedMps = location.getSpeed();  // speed in m/s
-        instantaneousPace = speedMps * 2.23694f; // convert to mph
+            float speedMps = location.getSpeed();  // speed in m/s
+            instantaneousPace = speedMps * 2.23694f; // convert to mph
 
-        updateTimeUI(elapsedMillis);
-        updatePace(location);
+            updateTimeUI(elapsedMillis);
+            updatePace(location);
 
-        //Heavy calculations in a background thread
-        backgroundExecutor.execute(() -> {
-           long now = SystemClock.elapsedRealtime();
-           float deltaTimeHours = 0f;
-           // Calculate the time difference between updates if it's not the first update
-           if (previousUpdateTime != 0) {
-               deltaTimeHours = (now - previousUpdateTime) / 3600000f;  // Convert ms to hours
-           }
-           previousUpdateTime = now;// Update the previous time for the next iteration
-            //Only begin tracking calories if program has ran longer than 2 seconds
-            if (elapsedMillis > 2000) {
+            //Heavy calculations in a background thread
+            backgroundExecutor.execute(() -> {
+                long now = SystemClock.elapsedRealtime();
+                float deltaTimeHours = 0f;
+                // Calculate the time difference between updates if it's not the first update
+                if (previousUpdateTime != 0) {
+                    deltaTimeHours = (now - previousUpdateTime) / 3600000f;  // Convert ms to hours
+                }
+                previousUpdateTime = now;// Update the previous time for the next iteration
                 float met = determineMET(instantaneousPace);  // MET value based on current speed
                 float partialCalories = met * userWeightKg * deltaTimeHours;  // calories for this interval
                 totalCaloriesSoFar += partialCalories;
                 totalDistanceMiles = totalDistanceMeters / 1609.34f;
-            }
                 //Compute average pace for the entire run (miles per hour)
                 float totalHours = elapsedMillis / 3600000f;
                 if (totalHours > 0) {
-                    avgPace = totalDistanceMiles / totalHours;
+                    float tempAvgPace = totalDistanceMiles / totalHours;
+                    if(tempAvgPace < 1 || tempAvgPace > 20) {
+                        avgPace = 0f;
+                    } else {
+                        avgPace = tempAvgPace;
+                    }
                 } else {
                     avgPace = 0f;
                 }
-           //Convert total calories to an integer for display
-           caloriesBurned = (int) totalCaloriesSoFar;
+                //Convert total calories to an integer for display
+                caloriesBurned = (int) totalCaloriesSoFar;
 
+                //UI updates go back on main thread
+                new Handler(context.getMainLooper()).post(() -> {
 
-            //UI updates go back on main thread
-            new Handler(context.getMainLooper()).post(() -> {
-
-                distanceView.setText(String.format(Locale.getDefault(), context.getString(R.string.distance), totalDistanceMiles));
-                avgPaceView.setText(String.format(Locale.getDefault(), context.getString(R.string.avg_pace), avgPace));
-                caloriesView.setText(String.format(Locale.getDefault(), context.getString(R.string.calories), caloriesBurned));
+                    distanceView.setText(String.format(Locale.getDefault(), context.getString(R.string.distance), totalDistanceMiles));
+                    avgPaceView.setText(String.format(Locale.getDefault(), context.getString(R.string.avg_pace), avgPace));
+                    caloriesView.setText(String.format(Locale.getDefault(), context.getString(R.string.calories), caloriesBurned));
+                });
             });
-        });
+        }
+            });
+        } catch (RejectedExecutionException e) {
+            // The executor is shut down – skip scheduling this task.
+            Log.w("RunUIMetrics", "Executor is shut down; skipping task update");
+        }
     }
 
     private void updatePace(Location location) {
@@ -226,7 +241,6 @@ public class RunUIMetrics {
         float speedMps = location.getSpeed();  // Speed in meters per second
         float pace = speedMps * 2.23694f;  // Convert to mph
 
-        Log.d("Metrics", "Location speed (mph) = " + pace);
         //Only update pace if program has ran longer than 2 seconds
         if (isRunning && elapsedMillis > 2000) {
             // Ignore incorrect speeds at the start
@@ -271,13 +285,23 @@ public class RunUIMetrics {
         return steps;
     }
 
-    public long getTime() {
-        return time;
+    public long getHours() {
+        return hours;
+    }
+
+    public long getMinutes() {
+        return minutes;
+    }
+
+    public long getSeconds() {
+        return seconds;
     }
 
     public void shutdownExecutor() {
         backgroundExecutor.shutdownNow();
     }
+
+
 }
 
 
