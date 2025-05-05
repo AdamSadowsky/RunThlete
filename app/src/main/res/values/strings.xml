@@ -38,14 +38,17 @@
     <string name="next">Next</string>
     <string name="previous">Previous</string>
     <string name="distance">Distance: \n%.2f miles</string>
+    <string name="distancePush">\n%.2f miles</string>
     <string name="paceMPH">Pace: \n%.2f mph</string>
     <string name="paceKMH">Pace: \n%.2f kph</string>
     <string name="calories">Calories: \n%d</string>
     <string name="time">"Time: \n%02d:%02d:%02d"</string>
+    <string name="timePush">\n%02d:%02d:%02d</string>
     <string name="running">running</string>
     <string name="hub">Hub</string>
     <string name="title_activity_maps">MapsActivity</string>
-    <string name="avg_pace">Average Pace: \n%.2f mph</string>
+    <string name="avgPace">Average Pace: \n%.2f mph</string>
+    <string name="avgPacePush">\n%.2f mph</string>
     <string name="weight">"Enter weight: "</string>
     <string name="steps">Steps: \n%d</string>
     <string name="finalTime">Time: %s</string>
@@ -63,4 +66,13 @@
     <string name="close_nav">Close Navigation</string>
     <string name="runthlete">Runthlete</string>
     <string name="DOB">%02d/%02d/%d</string>
+    <string name="runName">%s</string>
+    <string name="distanceCard">%02f\ndistance</string>
+    <string name="date">%s %d, %d</string>
+    <string name="timeCard">%s\ntime</string>
+    <string name="caloriesCard">%d\ncalories</string>
+    <string name="avgPaceCard">%02f \navg pace</string>
+    <string name="stepsCard">%d\nsteps</string>
+    <string name="save">Save</string>
+    <string name="savedRuns">Saved Runs</string>
 </resources>

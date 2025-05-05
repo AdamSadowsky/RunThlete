@@ -40,7 +40,11 @@
     <item android:title="">
 
         <menu>
-
+            <item
+                android:title="@string/savedRuns"
+                android:id="@+id/savedRuns"
+                android:icon="@drawable/baseline_directions_run_24"
+                app:showAsAction="never"/>
             <item
                 android:title="@string/settings"
                 android:id="@+id/settings"

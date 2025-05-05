@@ -42,7 +42,7 @@
         android:layout_height="150dp"
         android:layout_marginStart="205dp"
         android:background="@drawable/running_boxes"
-        android:text="@string/avg_pace"
+        android:text="@string/avgPace"
         android:textAlignment="center"
         android:textAllCaps="true"
         android:textColor="@color/white"

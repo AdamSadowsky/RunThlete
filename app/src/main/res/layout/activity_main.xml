@@ -21,21 +21,12 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- App Name -->
-
-
-        <!-- Sign Up Text -->
-
-        <!-- Login Button -->
-
-        <!-- Divider with Social Login Text -->
-
         <TextView
             android:id="@+id/appName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/app_name"
+            android:text="@string/login"
             android:textAlignment="center"
             android:textColor="@color/orange"
             android:textSize="34sp"
@@ -180,10 +171,10 @@
 
                 <View
                     android:layout_width="0dp"
-                    android:layout_height="2dp"
+                    android:layout_height="1.5dp"
                     android:layout_marginTop="30dp"
                     android:layout_weight="1"
-                    android:background="@color/cyan" />
+                    android:background="@color/black" />
 
                 <TextView
                     android:id="@+id/textView"
@@ -198,10 +189,10 @@
 
                 <View
                     android:layout_width="0dp"
-                    android:layout_height="2dp"
+                    android:layout_height="1.5dp"
                     android:layout_marginTop="30dp"
                     android:layout_weight="1"
-                    android:background="@color/cyan" />
+                    android:background="@color/black" />
 
         </LinearLayout>
 

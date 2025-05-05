@@ -114,7 +114,7 @@
         app:helperTextTextColor="@color/red"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/phoneNumberLayout"
+        app:layout_constraintTop_toBottomOf="@+id/lastNameLayout"
         app:startIconDrawable="@drawable/baseline_email_24"
         app:startIconTint="@color/black">
 
@@ -168,43 +168,6 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/phoneNumberLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="24dp"
-        app:boxStrokeWidth="0dp"
-        app:counterEnabled="true"
-        app:counterMaxLength="10"
-        app:counterOverflowTextAppearance="@color/red"
-        app:counterOverflowTextColor="@color/red"
-        app:counterTextAppearance="@style/CounterTextAppearance"
-        app:counterTextColor="@color/black"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/lastNameLayout"
-        app:helperTextEnabled="true"
-        app:helperText="@string/helperText"
-        app:helperTextTextColor="@color/red"
-        app:startIconDrawable="@drawable/baseline_phone_24"
-        app:startIconTint="@color/black">
-
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/phoneNumber"
-            style="@style/infoInput"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:hint="@string/phoneNumber"
-            android:inputType="number"
-            android:maxLength="10"
-            android:lines="1"
-            android:paddingStart="40dp"
-            android:paddingEnd="16dp"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/dateOfBirthLayout"
         android:layout_width="156dp"
         android:layout_height="62dp"
@@ -239,7 +202,6 @@
         android:layout_width="130dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="10dp"
         android:background="@drawable/login_password_background"
         app:boxStrokeWidth="0dp"
         app:layout_constraintStart_toStartOf="parent"
@@ -262,7 +224,6 @@
         android:layout_width="110dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
         android:background="@drawable/login_password_background"
         app:boxStrokeWidth="0dp"
         app:layout_constraintStart_toEndOf="@+id/monthLayout"
@@ -286,7 +247,7 @@
         android:layout_width="110dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
+
         android:layout_marginEnd="24dp"
         android:background="@drawable/login_password_background"
         app:boxStrokeWidth="0dp"
