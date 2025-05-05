@@ -27,25 +27,23 @@ public class GoogleLocationTracker {
     private LocationUpdateListener updateListener;
     private Location lastKnownLocation = null;
     private Location firstKnownLocation = null;
-    private Context context;
+    private final Context context;
     private boolean isRunning = false; // Track if the timer is running
     private static HandlerThread locationHandlerThread;
     private static Handler locationHandler;
-    private Handler logHandler = new Handler();
-    private Runnable logRunnable;
 
 
     public GoogleLocationTracker(Context context) {
         this.context = context;
         this.fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
         //Requests location updates with a high accuracy
-        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000) // Request updates every 500ms
-                .setMinUpdateIntervalMillis(800)  // Allow updates every 800ms (for quick responsiveness)
+        locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000) // Request updates every 1000ms
+                .setMinUpdateIntervalMillis(800)  // Allow updates every 800ms
                 .setWaitForAccurateLocation(true)  // Ensures GPS accuracy before providing an update
-                .setMaxUpdateDelayMillis(1500)  // Prevents delays longer than 1 second
+                .setMaxUpdateDelayMillis(1500)  // Prevents delays longer than 1.5 second
                 .build();
 
-        // Initialize LocationCallback to handle location updates
+        //Initializes LocationCallback to handle location updates
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult locationResult) {
@@ -58,9 +56,9 @@ public class GoogleLocationTracker {
                     }
 
                     if (firstKnownLocation == null ) {
-                        firstKnownLocation = location;//Set first location
+                        firstKnownLocation = location;//Sets first location
                     }
-                        lastKnownLocation = location; // Update last known location to current location
+                        lastKnownLocation = location; //Constantly updates last known location to current location
                     // Notify the listener so the UI can update
                     if (updateListener != null) {
                         updateListener.updateUi(location);//Notify the listener so the UI can update
@@ -74,20 +72,6 @@ public class GoogleLocationTracker {
             locationHandlerThread.start();
             locationHandler = new Handler(locationHandlerThread.getLooper());
         }
-        logRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (isRunning) {
-                    String lastLocation = "null";
-
-                    if (lastKnownLocation != null) {
-                        lastLocation = lastKnownLocation.getLatitude() + "," + lastKnownLocation.getLongitude();
-                    }
-
-                    logHandler.postDelayed(this, 2000); // Re-run in 2 seconds
-                }
-            }
-        };
     }
 
     public void setLocationUpdateListener(LocationUpdateListener listener){
@@ -97,14 +81,12 @@ public class GoogleLocationTracker {
 
     @SuppressLint("MissingPermission")
     public void startTracking() {
+        //Checks for location permissions
         if (!initLocationPermission()) {
             return;
-        } // Reinitialize handler thread if it’s null or not alive
-        if (locationHandlerThread == null || !locationHandlerThread.isAlive()) {
-            locationHandlerThread = new HandlerThread("LocationUpdates");
-            locationHandlerThread.start();
-            locationHandler = new Handler(locationHandlerThread.getLooper());
-        } if (firstKnownLocation == null) {
+        }
+        if (firstKnownLocation == null) {
+            //Retrieves the users current location
             fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
                     .addOnSuccessListener(location -> {
                 if (location != null) {
@@ -112,6 +94,7 @@ public class GoogleLocationTracker {
                     lastKnownLocation = location;
                     isRunning = true;
                     if (locationHandler != null) {
+                        //Invokes location updates at a specific interval until run is stopped
                         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, locationHandler.getLooper());
                     } else {
                         Log.w("Location", "Location handler is null; cannot request location updates");
@@ -126,10 +109,10 @@ public class GoogleLocationTracker {
             isRunning = true;
             fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, locationHandler.getLooper());
         }
-        logHandler.post(logRunnable);
     }
 
     public void stopTracking() {
+        //If location is being tracked it stops the updates
         if (fusedLocationProviderClient != null && locationCallback != null) {
             fusedLocationProviderClient.removeLocationUpdates(locationCallback);
         }
@@ -141,9 +124,9 @@ public class GoogleLocationTracker {
         }
 
         isRunning = false;
-        logHandler.removeCallbacks(logRunnable);
         }
 
+        //Checks if program has necessary location permissions
     private boolean initLocationPermission(){
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(context, "Location permission not granted", Toast.LENGTH_SHORT).show();

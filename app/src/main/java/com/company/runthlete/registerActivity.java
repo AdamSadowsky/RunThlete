@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import java.util.ArrayList;
@@ -24,20 +23,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
-
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+
 public class registerActivity extends AppCompatActivity {
 
     private Button backButton, registerButton;
-    private TextInputEditText editTextFirstName, editTextLastName, editTextEmail, editTextPassword, editTextPhoneNumber, editTextGender, editTextDOB;
+    private TextInputEditText editTextFirstName, editTextLastName, editTextEmail, editTextPassword, editTextGender, editTextDOB;
     private RadioButton maleButton, femaleButton;
     private AutoCompleteTextView dayDropDown, monthDropDown, yearDropDown;
-    String userID;
-    FirebaseAuth fAuth;
+    private String userID;
+    private FirebaseAuth fAuth;
 
+    //Sets the values for the months dropdown menu
     private static final String[] months =
             {"January", "February", "March",
                     "April", "May", "June",
@@ -46,11 +46,12 @@ public class registerActivity extends AppCompatActivity {
 
     private static final List<String> days = new ArrayList<>();
     private static final List<String> years = new ArrayList<>();
-
+    //Sets the values for the days dropdown menu
     static {
         for (int i = 1; i <= 31; i++) {
             days.add(String.valueOf(i));
         }
+        //Sets the values for the year dropdown menu
         for (int i = 1920; i <= 2012; i++) {
             years.add(String.valueOf(i));
         }
@@ -71,15 +72,14 @@ public class registerActivity extends AppCompatActivity {
         initializeViews();
         dropDownMenus();
 
-
-
+        //Navigates user back to login screen on click
         backButton.setOnClickListener(v -> {
             Log.d("RegisterActivity", "Back to login page button clicked");
             Intent i = new Intent(registerActivity.this, MainActivity.class);
             startActivity(i);
         });
 
-
+        //Validates user input and registers them into Firebase
         registerButton.setOnClickListener(v -> {
             v.clearFocus();
             if (validateInput()) {
@@ -89,11 +89,11 @@ public class registerActivity extends AppCompatActivity {
     }
 
     private void registerUser() {
+        //Assigns values for fields submitted
         String email = String.valueOf(editTextEmail.getText());
         String password = String.valueOf(editTextPassword.getText());
         String firstName = String.valueOf(editTextFirstName.getText());
         String lastName = String.valueOf(editTextLastName.getText());
-        String phoneNumber = String.valueOf(editTextPhoneNumber.getText());
         String day = String.valueOf(dayDropDown.getText());
         String month = String.valueOf(monthDropDown.getText());
         String year = String.valueOf(yearDropDown.getText());
@@ -101,6 +101,7 @@ public class registerActivity extends AppCompatActivity {
         int birthDay = Integer.parseInt(day);
 
         int numMonth = -1;
+        //Retrieves integer value for users birth month
         for (int i = 0; i < months.length; i++) {
             if (month.equals(months[i])) {
                 numMonth = i + 1;
@@ -110,7 +111,9 @@ public class registerActivity extends AppCompatActivity {
 
         String DOB = String.format(Locale.getDefault(), this.getString(R.string.DOB), numMonth, birthDay, birthYear);
 
+
         String gender;
+        //Assigns value for gender selected
         if(maleButton.isChecked()){
             gender = "Male";
         } else if(femaleButton.isChecked()){
@@ -128,35 +131,37 @@ public class registerActivity extends AppCompatActivity {
                     .addOnFailureListener(e ->
                                 Toast.makeText(this, "update profile failed", Toast.LENGTH_SHORT).show()
                     );
+            //Creates a HashMap and puts users info into it
                     Map<String, Object> userMap = new HashMap<>();
                     userMap.put("firstName", firstName);
                     userMap.put("lastName", lastName);
-                    userMap.put("phoneNumber", phoneNumber);
                     userMap.put("DOB", DOB);
                     userMap.put("gender", gender);
 
 
                     FirebaseFirestore db = FirebaseFirestore.getInstance();
-                    db.collection("users").document(userID).set(userMap)
-                            .addOnSuccessListener(aVoid1 -> {
-                                Log.d("RegisterActivity", "User added to Firestore");
-                                Toast.makeText(registerActivity.this, "Succesfully registered", Toast.LENGTH_SHORT).show();
-                                Log.d("RegisterActivity", "Register button clicked");
-                                Intent i = new Intent(registerActivity.this, hubActivity.class);
-                                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // Clears backstack
-                                startActivity(i);
+                    DocumentReference infoRef =
+                            db.collection("users")
+                                    .document(userID)
+                                    .collection("userInfo")
+                                    .document("demographics");
+                    //Navigates to hub activity once demographics document submission completes
+                    infoRef.set(userMap)
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d("RunFrag", "Run data submitted");
+                                startActivity(new Intent(this, hubActivity.class));
                                 finish();
+                            })
+                            .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
                             })
                             .addOnFailureListener(e -> {
                                 Log.e("RegisterActivity", "Error adding user", e);
                                 Toast.makeText(this, "Error, Please try again", Toast.LENGTH_SHORT).show();
                             });
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Registration failed", Toast.LENGTH_SHORT).show();
-                });
+
     }
 
+    //Initializes all layout views
     private void initializeViews() {
         backButton = findViewById(R.id.backButton);
         registerButton = findViewById(R.id.register);
@@ -165,7 +170,6 @@ public class registerActivity extends AppCompatActivity {
         editTextLastName = findViewById(R.id.lastName);
         editTextEmail = findViewById(R.id.email);
         editTextPassword = findViewById(R.id.password);
-        editTextPhoneNumber = findViewById(R.id.phoneNumber);
         editTextGender = findViewById(R.id.gender);
         editTextDOB = findViewById(R.id.dateOfBirth);
 
@@ -179,19 +183,20 @@ public class registerActivity extends AppCompatActivity {
         fAuth = FirebaseAuth.getInstance();
     }
 
+    //Sets dropdown menus values
     private void dropDownMenus() {
         monthDropDown.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, months));
         dayDropDown.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, days));
         yearDropDown.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, years));
     }
 
+    //Validates whether users submitted input meets criteria
     private boolean validateInput() {
 
         boolean hasError = false;
-
+        //Resets errors when user submits new input
         editTextFirstName.setError(null);
         editTextLastName.setError(null);
-        editTextPhoneNumber.setError(null);
         editTextEmail.setError(null);
         editTextPassword.setError(null);
         dayDropDown.setError(null);
@@ -199,10 +204,9 @@ public class registerActivity extends AppCompatActivity {
         yearDropDown.setError(null);
         editTextGender.setError(null);
         editTextDOB.setError(null);
-
+        //Assigns submitted field values
         String firstName = Objects.requireNonNull(editTextFirstName.getText()).toString().trim();
         String lastName = Objects.requireNonNull(editTextLastName.getText()).toString().trim();
-        String phoneNumber = Objects.requireNonNull(editTextPhoneNumber.getText()).toString().trim();
         String email = Objects.requireNonNull(editTextEmail.getText()).toString().trim();
         String password = Objects.requireNonNull(editTextPassword.getText()).toString().trim();
         String day = dayDropDown.getText().toString().trim();
@@ -216,10 +220,6 @@ public class registerActivity extends AppCompatActivity {
         if (TextUtils.isEmpty(lastName)) {
             hasError = true;
             editTextLastName.setError("Last name can't be empty");
-        }
-        if (TextUtils.isEmpty(phoneNumber)) {
-            hasError = true;
-            editTextPhoneNumber.setError("Phone number can't be empty");
         }
         if (TextUtils.isEmpty(email)) {
             hasError = true;
@@ -236,10 +236,10 @@ public class registerActivity extends AppCompatActivity {
         if(!validatePassword(password)){
             hasError = true;
         }
-
         return !hasError;
     }
 
+    //Validates whether users password meets all criteria
     private boolean validatePassword(String password) {
 
         StringBuilder errors = new StringBuilder();

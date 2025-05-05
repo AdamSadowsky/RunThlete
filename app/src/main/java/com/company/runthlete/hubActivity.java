@@ -7,10 +7,8 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -34,14 +32,8 @@ import com.google.firebase.auth.FirebaseUser;
 public class hubActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_FINE_LOCATION = 1;
-    FirebaseAuth auth;
-    FirebaseUser user;
-    ActivityHubBinding binding;
-    DrawerLayout drawerLayout;
-    ActionBarDrawerToggle toggle;
-    NavigationView navigationView;
-    BottomNavigationView bottomNavigationView;
-    Toolbar toolbar;
+    private ActivityHubBinding binding;
+    private DrawerLayout drawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,10 +42,10 @@ public class hubActivity extends AppCompatActivity {
         binding = ActivityHubBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        drawerLayout = binding.drawerLayout;
-        navigationView = binding.options;
+        drawerLayout = binding.drawerLayout;//Side navigation view
+        NavigationView navigationView = binding.options;
         navigationView.setItemIconTintList(null);
-        toolbar = binding.toolbar;
+        Toolbar toolbar = binding.toolbar;
         setSupportActionBar(toolbar);
 
         ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, windowInsets) -> {
@@ -63,7 +55,7 @@ public class hubActivity extends AppCompatActivity {
             return windowInsets;
         });
 
-        bottomNavigationView = binding.bottomNavBar;
+        BottomNavigationView bottomNavigationView = binding.bottomNavBar;//Sets bottom navigation view
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNavBar, (v, windowInsets) -> {
             Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             // Apply only bottom inset so the bottom nav sits just above the navigation bar.
@@ -71,47 +63,62 @@ public class hubActivity extends AppCompatActivity {
             return windowInsets;
         });
 
-        toggle = new ActionBarDrawerToggle(this,drawerLayout, toolbar, R.string.open_nav, R.string.close_nav);
+        //Handles view change of side navigation view
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.open_nav, R.string.close_nav);
         binding.drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
 
         View decorView = getWindow().getDecorView();
-// Hide the status bar.
+        // Hide the status bar.
         int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
         decorView.setSystemUiVisibility(uiOptions);
 
-
-
+        //Checks whether location permissions have been provided
         if (ActivityCompat.checkSelfPermission(hubActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Log.d("Debug", "Location accessible");
 
+            //Checks the state of gps
             if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 Toast.makeText(hubActivity.this, "GPS is turned off. Enable it before starting!", Toast.LENGTH_LONG).show();
                 Log.d("Debug", "GPS not available");
                 finish();
                 return;
             }
-            auth = FirebaseAuth.getInstance();
-            user = auth.getCurrentUser();
 
+            FirebaseAuth auth = FirebaseAuth.getInstance();
+            FirebaseUser user = auth.getCurrentUser();
+
+            //Navigates user to login screen if they are not registered
             if (user == null) {
                 Intent intent = new Intent(this, MainActivity.class);
                 Log.d("Debug", "User isn't logged in switching to login screen");
                 startActivity(intent);
                 finish();
             } else {
+                //Navigates user to home fragment if they are registered
                 Log.d("Debug", "User is logged in switching to home fragment");
                 replaceFrag(new HomeFragment());
             }
 
+            //Retrieves running intent to determine navigation view
             boolean isRunning = getIntent().getBooleanExtra("isRunning", true);
 
+            //Navigates to post run fragment if user just completed their run
             if(!isRunning){
-                replaceFrag(new PostRunFragment());
+                Bundle args = getIntent().getExtras();//Retrieves all extras in a bundle
+                PostRunFragment postRunFragment = new PostRunFragment();
+                if(args != null){
+                    postRunFragment.setArguments(args);
+                    replaceFrag(postRunFragment);
+                    return;
+                }
             }
 
+            getIntent().removeExtra("isRunning");//Resets isRunning value
+
+            //Navigates to user to selected fragment in the side navigation view
             navigationView.setNavigationItemSelectedListener(item -> {
                 Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                 if ( item.getItemId() == R.id.progression) {
@@ -134,6 +141,10 @@ public class hubActivity extends AppCompatActivity {
                     if (!(currentFragment instanceof ProfileFragment)) {
                         replaceFrag(new ProfileFragment());
                     }
+                } else if (item.getItemId() == R.id.savedRuns) {
+                    if (!(currentFragment instanceof PostRunFragment)) {
+                        replaceFrag(new PostRunFragment());
+                    }
                 }
                 drawerLayout.closeDrawer(GravityCompat.START);
                 return true;
@@ -142,6 +153,7 @@ public class hubActivity extends AppCompatActivity {
 
             bottomNavigationView.setItemIconTintList(null);
 
+            //Navigates user to selected fragment in the bottom navigation view
             bottomNavigationView.setOnItemSelectedListener(item -> {
                 Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
 
@@ -171,6 +183,7 @@ public class hubActivity extends AppCompatActivity {
                     }
                     return true;
                 }
+
                 return true;
             });
         } else {
@@ -180,42 +193,7 @@ public class hubActivity extends AppCompatActivity {
     }
 
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        Log.d("Debug", "opened");
-        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-        if (item.getItemId() == R.id.progression) {
-            if (!(currentFragment instanceof ProgressionFragment)) {
-                replaceFrag(new ProgressionFragment());
-            }
-            return true;
-        } else if (item.getItemId() == R.id.groups) {
-            if (!(currentFragment instanceof GroupsFragment)) {
-                replaceFrag(new GroupsFragment());
-            }
-            return true;
-        } else if (item.getItemId() == R.id.home) {
-            if (!(currentFragment instanceof HomeFragment)) {
-                replaceFrag(new HomeFragment());
-            }
-            return true;
-        } else if (item.getItemId() == R.id.leaderboards) {
-            if (!(currentFragment instanceof LeaderboardsFragment)) {
-                replaceFrag(new LeaderboardsFragment());
-            }
-            return true;
-        } else if (item.getItemId() == R.id.profile) {
-            if (!(currentFragment instanceof ProfileFragment)) {
-                replaceFrag(new ProfileFragment());
-            }
-            return true;
-        } else {
-            Log.d("Debug", "None found");
-        }
-        return true;
-    }
-
-
+    //Verifies whether program has necessary permissions
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -233,7 +211,7 @@ public class hubActivity extends AppCompatActivity {
         }
     }
 
-
+    //Navigates user to the selected fragment
     private void replaceFrag(Fragment fragment) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -241,6 +219,7 @@ public class hubActivity extends AppCompatActivity {
         fragmentTransaction.commit();
     }
 
+    //Life cycle methods
     @Override
     protected void onDestroy() {
         super.onDestroy();

@@ -21,36 +21,22 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-
+import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 public class RunningActivity extends AppCompatActivity implements LocationUpdateListener{
-
-    //UI elements
     private TextView distanceTracker, paceTracker, avgPaceTracker, caloriesTracker, timeTracker, stepsTracker;
     private ImageButton pauseButton, stopButton, startButton;
-
-    //Location tracking permissions
+    private Calendar calendar;
+    private String date;
     private static final int PERMISSIONS_FINE_LOCATION = 1;
-
-    //
     private GoogleLocationTracker locationTracker;
     private RunUIMetrics uiMetrics;
-
-
-    //Initializes variables
     private boolean isRunning = false; // Track if the timer is running
-    private List<LatLng> runPath = new ArrayList<>();
-    private float userWeightKg;
+    private final List<LatLng> runPath = new ArrayList<>();
     private long lastUpdateTime = 0;
-
-    FirebaseAuth fAuth;
 
 
     @Override
@@ -67,7 +53,7 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
         initViews();
 
         // Retrieve the weight passed from hubActivity
-        userWeightKg = getIntent().getIntExtra("userWeight", 0) / 2.20462f;
+        float userWeightKg = getIntent().getIntExtra("userWeight", 0) / 2.20462f;
 
         //Initialize location tracker
         locationTracker = new GoogleLocationTracker(this);
@@ -76,35 +62,32 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
         //Initialize UI metrics
         uiMetrics = new RunUIMetrics(this, distanceTracker, paceTracker, avgPaceTracker, caloriesTracker, timeTracker, stepsTracker, userWeightKg, locationTracker);
 
-        startButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(isRunning){
-                    Log.d("Debug", "Program is already running");
+        startButton.setOnClickListener(v -> {
+            if(isRunning){
+                Log.d("Debug", "Program is already running");
+                return;
+            }
+            Log.d("Button", "Start Button Pressed");
+            //Checks if permission is granted and starts tracking metrics
+            if (ActivityCompat.checkSelfPermission(RunningActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                Log.d("Debug", "Location accessible");
+
+                if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    Toast.makeText(RunningActivity.this, "GPS is turned off. Enable it before starting!", Toast.LENGTH_LONG).show();
+                    Log.d("Debug", "GPS not available");
                     return;
                 }
-                Log.d("Button", "Start Button Pressed");
-                //Checks if permission is granted and starts tracking metrics
-                if (ActivityCompat.checkSelfPermission(RunningActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                    Log.d("Debug", "Location accessible");
 
-                    if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                        Toast.makeText(RunningActivity.this, "GPS is turned off. Enable it before starting!", Toast.LENGTH_LONG).show();
-                        Log.d("Debug", "GPS not available");
-                        return;
-                    }
-
-                    locationTracker.startTracking();//Starts tracking in GoogleLocationTracker
-                    uiMetrics.startTimer();//Starts tracking in RunUIMetrics
-                    startButton.setVisibility(View.INVISIBLE);//Hides start button
-                    stopButton.setVisibility(View.VISIBLE);//Shows stop button
-                    pauseButton.setVisibility(View.VISIBLE);//Shows pause button
-                    isRunning = true;
-                } else {
-                    Log.d("Debug", "Missing permissions to start activity");
-                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);  // Request permission if not granted
-                }
+                locationTracker.startTracking();//Starts tracking in GoogleLocationTracker
+                uiMetrics.startTimer();//Starts tracking in RunUIMetrics
+                startButton.setVisibility(View.INVISIBLE);//Hides start button
+                stopButton.setVisibility(View.VISIBLE);//Shows stop button
+                pauseButton.setVisibility(View.VISIBLE);//Shows pause button
+                isRunning = true;
+            } else {
+                Log.d("Debug", "Missing permissions to start activity");
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);  // Request permission if not granted
             }
         });
 
@@ -138,9 +121,14 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
                 stopButton.setEnabled(false);  // Disable stop to prevent repeated clicks
                 pauseButton.setEnabled(false); // Disable pause since tracking is permanently stopped
                 isRunning = false;
-                //Navigates user to post run page with their run analytics and path
+                calendar = Calendar.getInstance();
+                DateFormat df = DateFormat.getDateInstance(DateFormat.LONG);
+                date = df.format(calendar.getTime());
+
+                //Navigates user to hubActivity which then navigates to post run fragment with their run analytics and path
+                //Passes all data to hub activity in order for the bottom and side nav views to be visible on fragment
                     Intent i = new Intent(RunningActivity.this, hubActivity.class);
-                    PostRunFragment.runPath = runPath;
+                    i.putParcelableArrayListExtra("runPath", new ArrayList<>(runPath));
                     i.putExtra("isRunning", isRunning);
                     i.putExtra("startLat", firstKnownLocation.getLatitude());
                     i.putExtra("startLng", firstKnownLocation.getLongitude());
@@ -153,6 +141,7 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
                     i.putExtra("hours", uiMetrics.getHours());
                     i.putExtra("minutes", uiMetrics.getMinutes());
                     i.putExtra("seconds", uiMetrics.getSeconds());
+                    i.putExtra("date", date);
                     startActivity(i);
                     finish();
                 } else {
@@ -188,6 +177,7 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
     }
 
     @Override
+    //Updates through google location tracker listener
     public void updateUi (Location location) {
         //Only update UI if the user is running
         if (!isRunning) {
@@ -252,6 +242,7 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
         stopButton.setImageResource(R.drawable.baseline_stop_circle_24);
         startButton = findViewById(R.id.startButton);
 
+
     }
 
     @Override
@@ -272,4 +263,11 @@ public class RunningActivity extends AppCompatActivity implements LocationUpdate
                 uiMetrics.shutdownExecutor(); //Shut down the executor
             }
         }
+
+        @Override
+    protected void onResume() {
+        super.onResume();
+
+        }
+
 }

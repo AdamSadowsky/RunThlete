@@ -10,7 +10,6 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
 import android.widget.TextView;
-
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,38 +17,29 @@ import java.util.concurrent.RejectedExecutionException;
 
 public class RunUIMetrics {
 
-    private Context context;
-    private TextView distanceView, paceView, avgPaceView, caloriesView, timeView, stepsView;
-
-    private SensorManager sensorManager;
+    private final Context context;
+    private final TextView distanceView, paceView, avgPaceView, caloriesView, timeView, stepsView;
+    private final SensorManager sensorManager;
     private Sensor stepCounterSensor;
-
-    private GoogleLocationTracker locationTracker;
-
+    private final GoogleLocationTracker locationTracker;
     private float instantaneousPace = 0f; // mph (immediate reading)
     private float avgPace = 0f;
-
     private float totalCaloriesSoFar = 0f;  // Accumulated calories (as a float)
     private int caloriesBurned = 0;
-
-    private Handler timeHandler = new Handler();// Handler for updating the time
-    private long time = 0L;
+    private final Handler timeHandler = new Handler();// Handler for updating the time
     private long hours = 0L;
     private long minutes = 0L;
     private long seconds = 0L;
     private long startTime = 0L;
     private long pauseTime = 0L;
-    private long previousUpdateTime = 0L;// Used to calculate time difference between updates
-    private Location previousLocation = null;// Last location used to compute a delta
-
+    private long previousUpdateTime = 0L;//Used to calculate time difference between updates
+    private Location previousLocation = null;//Last location used to compute a delta
     private float totalDistanceMeters = 0f;
     private float totalDistanceMiles = 0f;
-
     private int steps = 0;
-    private int initialStepCount = -1; // Use -1 as a flag that we haven't recorded it yet.
-    private float userWeightKg;
-
-    private boolean isRunning = false; // Track if the activity is running
+    private int initialStepCount = -1; //Use -1 as a flag that we haven't recorded it yet.
+    private final float userWeightKg;
+    private boolean isRunning = false; //Track if the activity is running
     private final ExecutorService backgroundExecutor = Executors.newSingleThreadExecutor();
 
     public RunUIMetrics(Context context, TextView distanceView, TextView paceView,
@@ -72,18 +62,18 @@ public class RunUIMetrics {
         }
     }
 
-    private SensorEventListener stepCounterListener = new SensorEventListener() {
+    private final SensorEventListener stepCounterListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent event) {
-            // Initialize the initial step count if it hasn't been recorded yet
+            //Initialize the initial step count if it hasn't been recorded yet
             if (initialStepCount < 0) {
                 initialStepCount = (int) event.values[0];
                 Log.d("Info", "First step recorded");
             }
-            // Calculate the steps taken since the run started
+            //Calculate the steps taken since the run started
             steps = (int) (event.values[0] - initialStepCount);
-            String stepCount = String.format(Locale.getDefault(), context.getString(R.string.steps), steps);
-            stepsView.setText(stepCount);
+            String stepCount = String.format(Locale.getDefault(), context.getString(R.string.steps), steps);//Stores stepCount in a string
+            stepsView.setText(stepCount);//Sets stepCount string to layout
         }
 
         @Override
@@ -91,7 +81,7 @@ public class RunUIMetrics {
         }
     };
 
-    private Runnable timeRunnable = new Runnable() {
+    private final Runnable timeRunnable = new Runnable() {
         public void run() {
             //Starts and updates time if program is running every second
             if (isRunning) {
@@ -102,6 +92,7 @@ public class RunUIMetrics {
         }
     };
 
+    //Initializes variables to default values and begins recording time and step count
     public void startTimer() {
         isRunning = true;
         startTime = SystemClock.elapsedRealtime();
@@ -111,22 +102,24 @@ public class RunUIMetrics {
         initialStepCount = -1; // so the step sensor re-initializes
         if (sensorManager != null && stepCounterSensor != null) {
             sensorManager.registerListener(stepCounterListener, stepCounterSensor, SensorManager.SENSOR_DELAY_NORMAL);
-            Log.d("Debug", "Step counter resumed");
+            Log.d("Debug", "Step counter started");
         }
     }
 
+    //Stops tracking of time and step count
     public void stopTimer() {
         isRunning = false;
         timeHandler.removeCallbacks(timeRunnable);
         if (sensorManager != null) {
             sensorManager.unregisterListener(stepCounterListener);
-            Log.d("Debug", "Step counter paused");
+            Log.d("Debug", "Step counter ended");
         }
     }
 
+    //Pauses updates to time and step count
     public void pauseTimer() {
         isRunning = false;
-        pauseTime = SystemClock.elapsedRealtime();
+        pauseTime = SystemClock.elapsedRealtime();//Records time paused
         timeHandler.removeCallbacks(timeRunnable);
         if (sensorManager != null) {
             sensorManager.unregisterListener(stepCounterListener);
@@ -134,35 +127,35 @@ public class RunUIMetrics {
         }
     }
 
+    //Resumes updates to time and step count
     public void resumeTimer() {
         isRunning = true;
+        //Subtracts pause time from total time
         startTime += (SystemClock.elapsedRealtime() - pauseTime);
         timeHandler.post(timeRunnable);
         if (sensorManager != null && stepCounterSensor != null) {
             sensorManager.registerListener(stepCounterListener, stepCounterSensor, SensorManager.SENSOR_DELAY_NORMAL);
             Log.d("Debug", "Step counter resumed");
         }
+        previousLocation = null;//Prevents large distance jumps from pause to current location
     }
 
 
-    //Updates and sets the time text
+    //Updates and sets the time text to layout
     private void updateTimeUI(long time) {
         seconds = (time / 1000) % 60;
         minutes = (time / (1000 * 60)) % 60;
         hours = (time / (1000 * 60 * 60));
-        this.time = time;
         String timeText = String.format(Locale.getDefault(), context.getString(R.string.time), hours, minutes, seconds);
         timeView.setText(timeText);
     }
 
 
-    //Sets location data metrics to the to each specific UI element
+    //Sets location data metrics to each specific UI element
     public void updateUIData(Location location) {
         if (!isRunning || location == null) return;
 
-        if (backgroundExecutor.isShutdown()) {
-            return;
-        }
+        if (backgroundExecutor.isShutdown()) return;
 
         try {
             backgroundExecutor.execute(() -> {
@@ -172,11 +165,10 @@ public class RunUIMetrics {
             return;
         }
 
+        //Records time
         long elapsedMillis = SystemClock.elapsedRealtime() - startTime;
 
-        if (elapsedMillis < 3000) {
-            return;
-        } else {
+        if (elapsedMillis >= 2000) {
             //Calculate distance in meters if previous location is available
             if (previousLocation != null) {
                 float delta = previousLocation.distanceTo(location); // in meters
@@ -194,13 +186,13 @@ public class RunUIMetrics {
             backgroundExecutor.execute(() -> {
                 long now = SystemClock.elapsedRealtime();
                 float deltaTimeHours = 0f;
-                // Calculate the time difference between updates if it's not the first update
+                //Calculate the time difference between updates if it's not the first update
                 if (previousUpdateTime != 0) {
                     deltaTimeHours = (now - previousUpdateTime) / 3600000f;  // Convert ms to hours
                 }
-                previousUpdateTime = now;// Update the previous time for the next iteration
-                float met = determineMET(instantaneousPace);  // MET value based on current speed
-                float partialCalories = met * userWeightKg * deltaTimeHours;  // calories for this interval
+                previousUpdateTime = now;//Update the previous time for the next iteration
+                float met = determineMET(instantaneousPace);//MET value based on current speed
+                float partialCalories = met * userWeightKg * deltaTimeHours;  //Calories for this interval
                 totalCaloriesSoFar += partialCalories;
                 totalDistanceMiles = totalDistanceMeters / 1609.34f;
                 //Compute average pace for the entire run (miles per hour)
@@ -222,7 +214,7 @@ public class RunUIMetrics {
                 new Handler(context.getMainLooper()).post(() -> {
 
                     distanceView.setText(String.format(Locale.getDefault(), context.getString(R.string.distance), totalDistanceMiles));
-                    avgPaceView.setText(String.format(Locale.getDefault(), context.getString(R.string.avg_pace), avgPace));
+                    avgPaceView.setText(String.format(Locale.getDefault(), context.getString(R.string.avgPace), avgPace));
                     caloriesView.setText(String.format(Locale.getDefault(), context.getString(R.string.calories), caloriesBurned));
                 });
             });
@@ -235,6 +227,7 @@ public class RunUIMetrics {
     }
 
     private void updatePace(Location location) {
+        //Needs to ensure 2 seconds have passed before metrics begin recording
         long elapsedMillis = SystemClock.elapsedRealtime() - startTime;
 
         //Log raw location speed for debugging
@@ -243,7 +236,7 @@ public class RunUIMetrics {
 
         //Only update pace if program has ran longer than 2 seconds
         if (isRunning && elapsedMillis > 2000) {
-            // Ignore incorrect speeds at the start
+            // Ignore inaccurate speeds at the start
             if (pace > 0.1f && pace < 20f) {  // Filter out bad readings
                 String paceText = String.format(Locale.getDefault(), context.getString(R.string.paceMPH), pace);
                 paceView.setText(paceText);
@@ -254,6 +247,7 @@ public class RunUIMetrics {
         }
     }
 
+    //Determines calories burned based off users pace
     private float determineMET(float avgSpeedMph) {
         // If nearly stationary, assume resting metabolic rate
         if (avgSpeedMph < 0.5f) {
@@ -268,7 +262,7 @@ public class RunUIMetrics {
             return 13.5f;
         }
     }
-
+//Getters and setter for run stats
     public float getAvgPace() {
         return avgPace;
     }

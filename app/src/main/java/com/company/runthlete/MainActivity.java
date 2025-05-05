@@ -8,10 +8,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -20,8 +18,7 @@ public class MainActivity extends AppCompatActivity {
    private EditText editTextEmail, editTextPassword;
    private Button login;
    private TextView forgotPassword, signUpButton;
-   private ImageButton googleLogin, facebookLogin, microsoftLogin;
-   FirebaseAuth mAuth;
+    private FirebaseAuth mAuth;
 
     @Override
     public void onStart() {
@@ -35,17 +32,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-
         initViews();
 
         login.setOnClickListener(v -> {
+            //Verifies user submitted all fields and met all criteria
             if(validateInputs()){
                 String email = String.valueOf(editTextEmail.getText());
                 String password = String.valueOf(editTextPassword.getText());
@@ -57,39 +53,42 @@ public class MainActivity extends AppCompatActivity {
                                 startActivity(intent);
                                 finish();
                             } else {
-                                Toast.makeText(MainActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, "Authentication failed. Please Try Again", Toast.LENGTH_SHORT).show();
                             }
                         });
             }
         });
 
-
+        //Navigates users to registration activty on button click
         signUpButton.setOnClickListener(v -> {
             Intent i = new Intent(MainActivity.this, registerActivity.class);
             startActivity(i);
 
         });
 
+        //Navigates user to forgot password activity on button click
         forgotPassword.setOnClickListener(v -> {
             Intent i = new Intent(MainActivity.this, forgotPasswordActivity.class);
             startActivity(i);
         });
     }
 
+    //Initializes all layout views with their ids
     private void initViews() {
         signUpButton = findViewById(R.id.signUpButton);
         forgotPassword = findViewById(R.id.forgotPassword);
         editTextEmail = findViewById(R.id.emailInput);
         editTextPassword = findViewById(R.id.passwordInput);
         login = findViewById(R.id.loginButton);
-        googleLogin = findViewById(R.id.googleLogin);
-        facebookLogin = findViewById(R.id.facebookLogin);
-        microsoftLogin = findViewById(R.id.microsoftLogin);
+        ImageButton googleLogin = findViewById(R.id.googleLogin);
+        ImageButton facebookLogin = findViewById(R.id.facebookLogin);
+        ImageButton microsoftLogin = findViewById(R.id.microsoftLogin);
         mAuth = FirebaseAuth.getInstance();
     }
 
+    //Checks if user meets all criteria on submission of login information
     private boolean validateInputs(){
-
+        //Resets errors once user submits a new prompt
         editTextEmail.setError(null);
         editTextPassword.setError(null);
 
@@ -107,8 +106,6 @@ public class MainActivity extends AppCompatActivity {
         else if(TextUtils.isEmpty(password)){
             editTextPassword.setError("Password cannot be left empty");
         }
-
-
         return true;
     }
 }

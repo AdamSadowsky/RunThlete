@@ -18,18 +18,10 @@ public class forgotPasswordActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_forgotpassword);
         backButton = findViewById(R.id.backButton);
-        /*ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+        backButton.setOnClickListener(v -> {
+            Intent i = new Intent(forgotPasswordActivity.this, MainActivity.class);
+            startActivity(i);
         });
-    }*/
-        backButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(forgotPasswordActivity.this, com.company.runthlete.MainActivity.class);
-                startActivity(i);
-            }
-            });
         }
     }

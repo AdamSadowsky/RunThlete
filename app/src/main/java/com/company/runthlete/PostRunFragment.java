@@ -3,7 +3,6 @@ package com.company.runthlete;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -15,21 +14,25 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
-
 import com.company.runthlete.databinding.FragmentPostrunBinding;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.AggregateSource;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.lang.reflect.Array;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,13 +40,24 @@ import java.util.Map;
 import java.util.Objects;
 
 public class PostRunFragment extends Fragment implements OnMapReadyCallback {
-    public static List<LatLng> runPath;
+    private ArrayList<LatLng> runPath;
     private GoogleMap mMap;
     private LatLng firstKnownLocation;
     private LatLng lastKnownLocation;
     private FragmentPostrunBinding binding;
-    FirebaseAuth fAuth;
-    String userID;
+    private FirebaseAuth fAuth;
+    private String userID;
+    private long hours, minutes, seconds, runSeconds;
+    private float avgPace, totalDistance;
+    private int calories, steps;
+    private String date;
+    private FirebaseFirestore db;
+    private CollectionReference runsCol;
+    private DocumentReference totalRunsDoc;
+    private String name;
+    private String defaultName;
+    Button saveBtn;
+    TextView timeTracker, avgPaceTracker, distanceTracker, calorieTracker, stepsTracker;
 
 
     @Override
@@ -59,101 +73,145 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
 
         initViews();
 
+        //If user chooses to save their run this will push all their run data into firestore for them so view later
+        saveBtn.setOnClickListener(e -> {
+                    fAuth = FirebaseAuth.getInstance();
+                    db = FirebaseFirestore.getInstance();
+                    userID = Objects.requireNonNull(fAuth.getCurrentUser()).getUid();
 
-        double startLat = requireActivity().getIntent().getDoubleExtra("startLat", 0);
-        double startLng = requireActivity().getIntent().getDoubleExtra("startLng", 0);
-        double lastLat = requireActivity().getIntent().getDoubleExtra("lastLat", 0);
-        double lastLng = requireActivity().getIntent().getDoubleExtra("lastLng", 0);
+                    //Goes to users collection, then their userid document, and lastly their runs collection
+                    runsCol = db
+                            .collection("users")
+                            .document(userID)
+                            .collection("runs");
+                    //Stores all of the user saved run total stats in one document
+                    totalRunsDoc = db
+                            .collection("users")
+                            .document(userID)
+                            .collection("userInfo")
+                            .document("totalRunStats");
 
-        firstKnownLocation = new LatLng(startLat, startLng);
-        lastKnownLocation = new LatLng(lastLat, lastLng);
+                    //Counts all of the users total runs ands sets it to a default name
+                    //if user saved run without entering a name else uses the name inputted
+                    runsCol.count()
+                            .get(AggregateSource.SERVER)
+                            .addOnSuccessListener(aggregateQuerySnapshot -> {
+                                long totalRuns = aggregateQuerySnapshot.getCount();
+                                name = Objects.requireNonNull(binding.runName.getText()).toString().trim();
+                                if (name.isEmpty()) {
+                                    defaultName = "Run #" + (totalRuns + 1);
+                                    writeToFireStore(defaultName);
+                                } else {
+                                    writeToFireStore(name);
+                                }
+                            })
+                            .addOnFailureListener(x -> {
+                                defaultName = "Run #1";
+                                Log.e("Error", "Count failed");
+                                writeToFireStore(defaultName);
+                            });
+        });
+    }
+
+    //Layout views
+    private void initViews() {
+        timeTracker = binding.timeTracker;
+        avgPaceTracker = binding.avgPaceTracker;
+        distanceTracker = binding.distanceTracker;
+        calorieTracker = binding.calorieTracker;
+        stepsTracker = binding.stepsTracker;
+        saveBtn = binding.save;
+
+        //Uses bundle passed to hub activity and sets the data
+        Bundle a = getArguments();
+        if(a != null) {
+            hours         = a.getLong("hours");
+            minutes       = a.getLong("minutes");
+            seconds       = a.getLong("seconds");
+            timeTracker.setText(getString(R.string.time, hours, minutes, seconds));
+            avgPace       = a.getFloat("avgPace");
+            avgPaceTracker.setText(getString(R.string.avgPace, avgPace));
+            totalDistance = a.getFloat("totalDistance");
+            distanceTracker.setText(getString(R.string.distance, totalDistance));
+            calories      = a.getInt("calories");
+            calorieTracker.setText(getString(R.string.calories, calories));
+            steps         = a.getInt("steps");
+            stepsTracker.setText(getString(R.string.steps, steps));
+            runSeconds = (hours * 3600) + (minutes * 60) + seconds;
+            date = a.getString("date");
+            double startLat = a.getDouble("startLat");
+            double startLng = a.getDouble("startLng");
+            double lastLat  = a.getDouble("lastLat");
+            double lastLng  = a.getDouble("lastLng");
+            firstKnownLocation = new LatLng(startLat, startLng);
+            lastKnownLocation  = new LatLng(lastLat, lastLng);
+            runPath = a.getParcelableArrayList("runPath");
+            if(runPath == null) {
+                runPath = new ArrayList<>();
+            }
+        }
 
         Log.d("MapsActivity", "First Known Location: " + firstKnownLocation);
         Log.d("MapsActivity", "Last Known Location: " + lastKnownLocation);
+
+
     }
 
-    private void initViews() {
-        TextView timeTracker = requireActivity().findViewById(R.id.timeTracker);
-        TextView avgPaceTracker = requireActivity().findViewById(R.id.avgPaceTracker);
-        TextView distanceTracker = requireActivity().findViewById(R.id.distanceTracker);
-        TextView calorieTracker = requireActivity().findViewById(R.id.calorieTracker);
-        TextView stepsTracker = requireActivity().findViewById(R.id.stepsTracker);
+    //Takes the data retrieved from bundle and puts it into firestore
+    private void writeToFireStore(String run_name) {
+        //Stores all locations in an array to put in firestore and later generate the run path
+        List<GeoPoint> geoPath = new ArrayList<>(runPath.size());
+        for(LatLng loc: runPath) {
+            geoPath.add(new GeoPoint(loc.latitude, loc.longitude));
+        }
+        //All run data types stored for a particular run in firestore
+        Map<String, Object> runStats = new HashMap<>();
+        runStats.put("calories", calories);
+        runStats.put("steps", steps);
+        runStats.put("time", getString(R.string.timePush, hours, minutes, seconds));
+        runStats.put("distance", getString(R.string.distancePush, totalDistance));
+        runStats.put("avgPace", getString(R.string.avgPacePush, avgPace));
+        runStats.put("date", date);
+        runStats.put("name", run_name);
+        runStats.put("runPath", geoPath);
 
-        long hours = requireActivity().getIntent().getLongExtra("hours", 0L);
-        long minutes = requireActivity().getIntent().getLongExtra("minutes", 0L);
-        long seconds = requireActivity().getIntent().getLongExtra("seconds", 0L);
-        timeTracker.setText(getString(R.string.time, hours, minutes, seconds));
-        float avgPace = requireActivity().getIntent().getFloatExtra("avgPace", 0f);
-        avgPaceTracker.setText(getString(R.string.avg_pace, avgPace));
-        float totalDistance = requireActivity().getIntent().getFloatExtra("totalDistance", 0f);
-        distanceTracker.setText(getString(R.string.distance, totalDistance));
-        int calories = requireActivity().getIntent().getIntExtra("calories", 0);
-        calorieTracker.setText(getString(R.string.calories, calories));
-        int steps = requireActivity().getIntent().getIntExtra("steps", 0);
-        stepsTracker.setText(getString(R.string.steps, steps));
+        //Increments all the values in total run stats with new saved run data
+        Map<String, Object> totalRunStats = new HashMap<>();
+        totalRunStats.put("totalCalories", FieldValue.increment(calories));
+        totalRunStats.put("totalSteps", FieldValue.increment(steps));
+        totalRunStats.put("totalTime", FieldValue.increment(runSeconds));
+        totalRunStats.put("totalDistance", FieldValue.increment(totalDistance));
 
-
-        fAuth = FirebaseAuth.getInstance();
-
-
-        Objects.requireNonNull(fAuth.getCurrentUser()).reload().addOnCompleteListener(item -> {
-            userID = fAuth.getCurrentUser().getUid();
-            Map<String, Object> userRunMap = new HashMap<>();
-            userRunMap.put("calories", calories);
-            userRunMap.put("steps", steps);
-            userRunMap.put("time", getString(R.string.time, hours, minutes, seconds));
-            userRunMap.put("distance", totalDistance);
-            userRunMap.put("avgPace", avgPace);
-
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            db.collection("users").document(userID).collection("Runs")
-                    .add(userRunMap)
-                    .addOnSuccessListener(aVoid -> Log.d("RunFrag", "Run data submitted"))
-                    .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
-        });
-
-        Objects.requireNonNull(fAuth.getCurrentUser()).reload().addOnCompleteListener(item -> {
-            userID = fAuth.getCurrentUser().getUid();
-            Map<String, Object> userTotalRunStats = new HashMap<>();
-            userTotalRunStats.put("Calories: ", calories);
-            userTotalRunStats.put("Steps: ", steps);
-            userTotalRunStats.put("Time: ", getString(R.string.time, hours, minutes, seconds));
-            userTotalRunStats.put("Distance: ", totalDistance);
-            userTotalRunStats.put("Average Pace: ", avgPace);
-
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            db.collection("users").document(userID).collection("Run Stats")
-                    .add(userTotalRunStats)
-                    .addOnSuccessListener(aVoid -> Log.d("RunFrag", "Run data submitted"))
-                    .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
-        });
+        WriteBatch batch = db.batch();
+        DocumentReference runsDoc = runsCol.document();
+        batch.set(runsDoc, runStats);//Puts run stats in run doc
+        batch.set(totalRunsDoc, totalRunStats, SetOptions.merge());//Increments total runs doc with total run stats
+        batch.commit()
+                .addOnSuccessListener(aVoid -> Log.d("RunFrag", "Run data submitted"))
+                .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+
+
+    //Sets the start and end points on the map for user to see with a polyline
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
         if (lastKnownLocation.latitude != 0 && lastKnownLocation.longitude != 0) {
-            // ✅ Move camera to the user's last known location
+            //Sets map view to this location
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastKnownLocation, 15));
 
             if (runPath != null && !runPath.isEmpty()) {
                 polyline(runPath);
             }
 
+            //Sets image at start location
             mMap.addMarker(new MarkerOptions()
                     .position(firstKnownLocation)
                     .title("Start")
                     .icon(BitmapDescriptorFactory.fromBitmap(Objects.requireNonNull(getBitmapFromVectorDrawable(requireContext(), R.drawable.baseline_run_circle_24, 80, 80)))));
+            //Sets image at end location
             mMap.addMarker(new MarkerOptions()
                     .position(lastKnownLocation)
                     .title("End")
@@ -161,37 +219,33 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    //Generates the polyline with accurate precision along run path
     private void polyline(final List<LatLng> originalPoints) {
         new Thread(() -> {
-            // OPTIONAL: If you have a huge list, you can simplify it.
-            // For demonstration, we'll call a stub method; replace it with your algorithm.
-            final List<LatLng> processedPoints = simplifyPath(originalPoints, 0.0001); // 10-meter tolerance
+            //Sets a low tolerance in order to prevent inaccurate path
+            final List<LatLng> processedPoints = simplifyPath(originalPoints, 0.0001);
 
-            // Post the drawing of the polyline back to the main thread.
-            requireActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    PolylineOptions polylineOptions = new PolylineOptions()
-                            .addAll(processedPoints)
-                            .width(15)
-                            .color(Color.RED)
-                            .geodesic(true);
-                    mMap.addPolyline(polylineOptions);
-                    Log.d("Debug", "Simplified polyline drawn with " + processedPoints.size() + " points.");
-                }
+            //Post the drawing of the polyline back to the main thread.
+            requireActivity().runOnUiThread(() -> {
+                PolylineOptions polylineOptions = new PolylineOptions()
+                        .addAll(processedPoints)
+                        .width(15)
+                        .color(Color.RED)
+                        .geodesic(true);
+                mMap.addPolyline(polylineOptions);
+                Log.d("Debug", "Simplified polyline drawn with " + processedPoints.size() + " points.");
             });
         }).start();
     }
 
-    // Returns a simplified version of the provided list of LatLng points.
-// 'tolerance' is in meters—points with a perpendicular distance below this tolerance will be removed.
+    //Returns a simplified version of the provided list of LatLng points.
     private List<LatLng> simplifyPath(List<LatLng> points, double tolerance) {
         if (points == null || points.size() < 3) {
             return points;
         }
 
-        // Find the point with the maximum perpendicular distance from the line
-        // connecting the first and last points.
+        //Finds the point with the maximum perpendicular distance from the line
+        //connecting the first and last points.
         int index = 0;
         double maxDistance = 0;
         LatLng firstPoint = points.get(0);
@@ -205,18 +259,18 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
             }
         }
 
-        // If the maximum distance is greater than the tolerance, recursively simplify.
+        //If the maximum distance is greater than the tolerance, recursively simplify.
         if (maxDistance > tolerance) {
             List<LatLng> recResults1 = simplifyPath(points.subList(0, index + 1), tolerance);
             List<LatLng> recResults2 = simplifyPath(points.subList(index, points.size()), tolerance);
-            // Combine the two results; remove the duplicate point at the split.
+            //Combine the two results; remove the duplicate point at the split.
             List<LatLng> result = new ArrayList<>(recResults1);
             result.remove(result.size() - 1);
             result.addAll(recResults2);
             return result;
         } else {
-            // No point is farther than the tolerance from the line,
-            // so we can just return the endpoints.
+            //No point is farther than the tolerance from the line,
+            //so we can just return the endpoints.
             List<LatLng> result = new ArrayList<>();
             result.add(firstPoint);
             result.add(lastPoint);
@@ -224,38 +278,57 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    // Helper method: computes the perpendicular distance from 'point' to the line segment from 'lineStart' to 'lineEnd'.
-// This method uses a simple geometric formula. For small areas, treating LatLng as Cartesian coordinates is acceptable.
+    //Computes the perpendicular distance from 'point' to the line segment from 'lineStart' to 'lineEnd'.
     private double perpendicularDistance(LatLng point, LatLng lineStart, LatLng lineEnd) {
         if (lineStart.equals(lineEnd)) {
             return distanceBetween(point, lineStart);
         }
         double dx = lineEnd.longitude - lineStart.longitude;
         double dy = lineEnd.latitude - lineStart.latitude;
-        // Compute the perpendicular distance (the area of the triangle times 2 divided by the base length)
+        //Compute the perpendicular distance (the area of the triangle times 2 divided by the base length)
         double numerator = Math.abs(dy * point.longitude - dx * point.latitude + lineEnd.longitude * lineStart.latitude - lineEnd.latitude * lineStart.longitude);
         double denominator = Math.sqrt(dx * dx + dy * dy);
         return numerator / denominator;
     }
 
-    // Helper method: computes the distance (in meters) between two LatLng points using Android's Location.distanceBetween().
+    //Computes the distance (in meters) between two LatLng points using Android's Location.distanceBetween().
     private double distanceBetween(LatLng p1, LatLng p2) {
         float[] results = new float[1];
         Location.distanceBetween(p1.latitude, p1.longitude, p2.latitude, p2.longitude, results);
         return results[0];
     }
 
+    //Creates bitmap from vector image
     private Bitmap getBitmapFromVectorDrawable(Context context, int drawableId, int width, int height) {
         Drawable drawable = ContextCompat.getDrawable(context, drawableId);
         if (drawable != null) {
-            // Set the drawable's bounds to the desired dimensions.
+            //Set the drawable's bounds to the desired dimensions.
             drawable.setBounds(0, 0, width, height);
-            // Create a bitmap with the specified width and height.
+            //Create a bitmap with the specified width and height.
             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             drawable.draw(canvas);
             return bitmap;
         }
         return null;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding.mapView.onDestroy();
+        binding = null;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        binding.mapView.onResume();
+    }
+
+    @Override
+    public void onPause(){
+        binding.mapView.onPause();
+        super.onPause();
     }
 }
