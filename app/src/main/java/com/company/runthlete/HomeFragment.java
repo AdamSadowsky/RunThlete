@@ -10,7 +10,6 @@ import android.os.Bundle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import android.util.Log;
@@ -27,29 +26,15 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.Source;
-
 import java.util.Objects;
-import java.util.concurrent.Executor;
-
 
 public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
-    private EditText editTextWeight;
-    private TextView editTextGreeting;
     FirebaseAuth auth;
     FirebaseUser user;
     private GoogleLocationTracker locationTracker;
     private GoogleMap mMap;
     private FragmentHomeBinding binding;
-    private Location lastKnownLocation;
-    private FirebaseAuth fAuth;
-    private FirebaseFirestore db;
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
@@ -61,7 +46,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        editTextGreeting = binding.greeting;
+        TextView editTextGreeting = binding.greeting;
                 String firstName = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getDisplayName();
                 if(firstName != null) {
                     editTextGreeting.setVisibility(View.VISIBLE);
@@ -112,7 +97,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
         private boolean validateWeight() {
             String weight = Objects.requireNonNull(binding.weightInput.getText()).toString().trim();
-            editTextWeight = binding.weightInput;
+            EditText editTextWeight = binding.weightInput;
             editTextWeight.setError(null);
 
             if(weight.isEmpty()){
@@ -131,7 +116,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         } catch(Exception e) {
             Log.d("Debug", "Start tracking error", e);
         }
-        lastKnownLocation = locationTracker.getLastKnownLocation();
+        Location lastKnownLocation = locationTracker.getLastKnownLocation();
         if(lastKnownLocation != null) {
             LatLng lastLatLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastLatLng, 15));
@@ -140,7 +125,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    private ActivityResultLauncher<String[]> locationPermissionLauncher =
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 Boolean fineLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
                 Boolean coarseLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);

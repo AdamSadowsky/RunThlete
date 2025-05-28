@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -33,6 +34,11 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -174,21 +180,70 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
         runStats.put("date", date);
         runStats.put("name", run_name);
         runStats.put("runPath", geoPath);
+        mMap.setOnMapLoadedCallback(() -> mMap.snapshot(snapshot -> {
+            if(snapshot == null){
+                Log.e("Error", "snapshot is null");
+                return;
+            }
+            File file = new File(requireContext().getFilesDir(), "runMap" + System.currentTimeMillis() + ".png");
+            try {
+                FileOutputStream out = new FileOutputStream(file);
+                boolean compressed = snapshot.compress(Bitmap.CompressFormat.PNG, 100, out);
+                out.close();
 
-        //Increments all the values in total run stats with new saved run data
-        Map<String, Object> totalRunStats = new HashMap<>();
-        totalRunStats.put("totalCalories", FieldValue.increment(calories));
-        totalRunStats.put("totalSteps", FieldValue.increment(steps));
-        totalRunStats.put("totalTime", FieldValue.increment(runSeconds));
-        totalRunStats.put("totalDistance", FieldValue.increment(totalDistance));
+                if (!compressed || !file.exists() || file.length() == 0) {
+                    Log.e("UploadError", "Failed to save snapshot properly. File missing or empty.");
+                    return;
+                }
+                out.close();
 
-        WriteBatch batch = db.batch();
-        DocumentReference runsDoc = runsCol.document();
-        batch.set(runsDoc, runStats);//Puts run stats in run doc
-        batch.set(totalRunsDoc, totalRunStats, SetOptions.merge());//Increments total runs doc with total run stats
-        batch.commit()
-                .addOnSuccessListener(aVoid -> Log.d("RunFrag", "Run data submitted"))
-                .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
+                StorageReference storageReference = FirebaseStorage.getInstance().getReference("map_snapshots/" + file.getName());
+                Uri fileUri = Uri.fromFile(file);
+
+                storageReference.putFile(fileUri)
+                        .addOnSuccessListener(taskSnapshot -> storageReference.getDownloadUrl().addOnSuccessListener(uri -> {
+                                    String downloadUrl = uri.toString();
+
+                                    runStats.put("mapImageUrl", downloadUrl);
+
+
+                            //Increments all the values in total run stats with new saved run data
+                            totalRunsDoc.get().addOnSuccessListener(snapshotDoc -> {
+                                WriteBatch batch = db.batch();
+                                DocumentReference runsDoc = runsCol.document();
+                                batch.set(runsDoc, runStats);//Puts run stats in run doc
+                                if (!snapshotDoc.exists()) {
+                                    Map<String, Object> totalRunStats = new HashMap<>();
+                                    totalRunStats.put("totalCalories", calories);
+                                    totalRunStats.put("totalSteps", steps);
+                                    totalRunStats.put("totalTime", runSeconds);
+                                    totalRunStats.put("totalDistance", totalDistance);
+                                    batch.set(totalRunsDoc, totalRunStats);
+                                } else {
+                                    Map<String, Object> totalRunStats = new HashMap<>();
+                                    totalRunStats.put("totalCalories", FieldValue.increment(calories));
+                                    totalRunStats.put("totalSteps", FieldValue.increment(steps));
+                                    totalRunStats.put("totalTime", FieldValue.increment(runSeconds));
+                                    totalRunStats.put("totalDistance", FieldValue.increment(totalDistance));
+                                    batch.set(totalRunsDoc, totalRunStats, SetOptions.merge());//Increments total runs doc with total run stats
+                                }
+
+                                batch.commit()
+                                        .addOnSuccessListener(aVoid -> {
+                                            Log.d("RunFrag", "Run data submitted");
+                                            requireActivity()
+                                                    .getSupportFragmentManager()
+                                                    .beginTransaction()
+                                                    .replace(R.id.fragment_container, new HomeFragment())
+                                                    .commit();
+                                        })
+                                        .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
+                            });
+                        })).addOnFailureListener(e -> Log.e("Error", "Failed to upload image", e));
+            } catch (IOException e) {
+                Log.e("Error", "Failed to save map image", e);
+            }
+        }));
     }
 
 
@@ -210,12 +265,12 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
             mMap.addMarker(new MarkerOptions()
                     .position(firstKnownLocation)
                     .title("Start")
-                    .icon(BitmapDescriptorFactory.fromBitmap(Objects.requireNonNull(getBitmapFromVectorDrawable(requireContext(), R.drawable.baseline_run_circle_24, 80, 80)))));
+                    .icon(BitmapDescriptorFactory.fromBitmap(Objects.requireNonNull(getBitmapFromVectorDrawable(requireContext(), R.drawable.baseline_run_circle_24)))));
             //Sets image at end location
             mMap.addMarker(new MarkerOptions()
                     .position(lastKnownLocation)
                     .title("End")
-                    .icon(BitmapDescriptorFactory.fromBitmap(Objects.requireNonNull(getBitmapFromVectorDrawable(requireContext(), R.drawable.baseline_outlined_flag_24, 80, 80)))));
+                    .icon(BitmapDescriptorFactory.fromBitmap(Objects.requireNonNull(getBitmapFromVectorDrawable(requireContext(), R.drawable.baseline_outlined_flag_24)))));
         }
     }
 
@@ -299,13 +354,13 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
     }
 
     //Creates bitmap from vector image
-    private Bitmap getBitmapFromVectorDrawable(Context context, int drawableId, int width, int height) {
+    private Bitmap getBitmapFromVectorDrawable(Context context, int drawableId) {
         Drawable drawable = ContextCompat.getDrawable(context, drawableId);
         if (drawable != null) {
             //Set the drawable's bounds to the desired dimensions.
-            drawable.setBounds(0, 0, width, height);
+            drawable.setBounds(0, 0, 80, 80);
             //Create a bitmap with the specified width and height.
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Bitmap bitmap = Bitmap.createBitmap(80, 80, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             drawable.draw(canvas);
             return bitmap;

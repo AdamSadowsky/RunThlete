@@ -107,12 +107,11 @@ public class hubActivity extends AppCompatActivity {
 
             //Navigates to post run fragment if user just completed their run
             if(!isRunning){
-                Bundle args = getIntent().getExtras();//Retrieves all extras in a bundle
                 PostRunFragment postRunFragment = new PostRunFragment();
+                Bundle args = getIntent().getExtras();//Retrieves all extras in a bundle
                 if(args != null){
                     postRunFragment.setArguments(args);
                     replaceFrag(postRunFragment);
-                    return;
                 }
             }
 
@@ -142,8 +141,8 @@ public class hubActivity extends AppCompatActivity {
                         replaceFrag(new ProfileFragment());
                     }
                 } else if (item.getItemId() == R.id.savedRuns) {
-                    if (!(currentFragment instanceof PostRunFragment)) {
-                        replaceFrag(new PostRunFragment());
+                    if (!(currentFragment instanceof SavedRunsFragment)) {
+                        replaceFrag(new SavedRunsFragment());
                     }
                 }
                 drawerLayout.closeDrawer(GravityCompat.START);

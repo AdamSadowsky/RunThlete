@@ -85,6 +85,14 @@ public class GoogleLocationTracker {
         if (!initLocationPermission()) {
             return;
         }
+
+        //Reinitialize handler thread if it’s null or not alive
+        if (locationHandlerThread == null || !locationHandlerThread.isAlive()) {
+            locationHandlerThread = new HandlerThread("LocationUpdates");
+            locationHandlerThread.start();
+            locationHandler = new Handler(locationHandlerThread.getLooper());
+        }
+
         if (firstKnownLocation == null) {
             //Retrieves the users current location
             fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
@@ -114,17 +122,20 @@ public class GoogleLocationTracker {
     public void stopTracking() {
         //If location is being tracked it stops the updates
         if (fusedLocationProviderClient != null && locationCallback != null) {
-            fusedLocationProviderClient.removeLocationUpdates(locationCallback);
-        }
-        if (locationHandlerThread != null) {
-            locationHandler.removeCallbacksAndMessages(null);
-            locationHandlerThread.quitSafely();
-            locationHandlerThread = null;
-            locationHandler = null;
-        }
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+                    .addOnCompleteListener(v -> {
 
-        isRunning = false;
+
+                        if (locationHandlerThread != null) {
+                            locationHandler.removeCallbacksAndMessages(null);
+                            locationHandlerThread.quitSafely();
+                            locationHandlerThread = null;
+                            locationHandler = null;
+                        }
+                    });
         }
+        isRunning = false;
+    }
 
         //Checks if program has necessary location permissions
     private boolean initLocationPermission(){
