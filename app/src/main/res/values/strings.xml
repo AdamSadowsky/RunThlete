@@ -75,4 +75,5 @@
     <string name="stepsCard">%d\nsteps</string>
     <string name="save">Save</string>
     <string name="savedRuns">Saved Runs</string>
+    <string name="lastRun">Last Run</string>
 </resources>

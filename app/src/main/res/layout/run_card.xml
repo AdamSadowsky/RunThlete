@@ -36,16 +36,21 @@
                 app:layout_constraintStart_toEndOf="@id/runName"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintHorizontal_weight="1"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
                 android:gravity="end"
                 style="@style/cardStyle"/>
 
-            <com.google.android.gms.maps.MapView
+            <ImageView
                 android:id="@+id/mapView"
                 style="@style/cardStyle"
-                android:layout_width="match_parent"
+                android:paddingStart="1dp"
+                android:paddingEnd="1dp"
+                android:paddingTop="1dp"
+                android:paddingBottom="1dp"
+                android:layout_width="0dp"
                 android:layout_height="100dp"
+                android:scaleType="centerCrop"
                 app:layout_constraintBottom_toTopOf="@+id/time"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -53,15 +58,15 @@
 
             <TextView
                 android:id="@+id/time"
+                style="@style/cardStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:gravity="center"
                 android:text="@string/timeCard"
                 app:layout_constraintEnd_toStartOf="@+id/distance"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/mapView"
                 app:layout_constraintHorizontal_weight="1"
-                android:gravity="center"
-                style="@style/cardStyle"/>
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/mapView" />
 
             <TextView
                 android:id="@+id/distance"

@@ -7,8 +7,8 @@
         android:color="@color/black"
         android:width="3dp"/>
     <gradient
-        android:startColor="@color/silver"
+        android:startColor="@color/pink"
         android:centerColor="@color/azure"
-        android:endColor="@color/azure"/>
+        android:endColor="@color/pink"/>
 
 </shape>

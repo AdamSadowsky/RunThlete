@@ -7,7 +7,7 @@
                 android:startColor="@color/pink"
                 android:centerColor="@color/thistle"
                 android:endColor="@color/navajowhite"/>
-            <stroke android:width="2dp" android:color="@color/black"/> <!-- Border width & color -->
+            <stroke android:width="1.5dp" android:color="@color/black"/> <!-- Border width & color -->
         </shape>
     </item>
 
