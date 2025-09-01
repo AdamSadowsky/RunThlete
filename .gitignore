@@ -100,4 +100,8 @@ fabric.properties
 ### AndroidStudio Patch ###
 !/gradle/wrapper/gradle-wrapper.jar
 
+# Firebase configuration
+google-services.json
+app/google-services.json
+
 # End of https://www.gitignore.io/api/androidstudio
