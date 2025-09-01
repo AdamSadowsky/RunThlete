@@ -1,6 +1,9 @@
 package com.company.runthlete;
 
+import static android.provider.Settings.System.getString;
+
 import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,23 +14,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 
-//For self: item view is the root view of the runCard
-//parent is the recycler view that holds all the cards
-//context refers to the fragment or activity that hosts the recycler view
-//holder is an instance of RunViewHolder which accesses all the fields in run card
-//super(itemView) passes the full card layout to the RecyclerView.ViewHolder superclass, which stores it as itemView
-//recycler view is now able to manage run card through itemView and reuse them
-
-
 public class SavedRunsAdapter extends RecyclerView.Adapter<SavedRunsAdapter.RunViewHolder> {
 
     private final ArrayList<RunData> runList;
+    private final OnRunClickListener listener;
     private final Context context;
 
-    //Saves the fragment context for inflating layouts and runList
-    public SavedRunsAdapter(Context context, ArrayList<RunData> runList) {
+    //Saves the fragment context for inflating layouts, run card list, and on click listeners for each run id
+    public SavedRunsAdapter(Context context, ArrayList<RunData> runList, OnRunClickListener listener) {
         this.context = context;
         this.runList = runList;
+        this.listener = listener;
     }
 
     //Inflates a new runCard view
@@ -46,15 +43,24 @@ public class SavedRunsAdapter extends RecyclerView.Adapter<SavedRunsAdapter.RunV
         Context context = holder.itemView.getContext();//Gets a valid context from the card view for glide
         holder.runName.setText(runData.getName());
         holder.runDate.setText(runData.getDate());
-        holder.time.setText(runData.getTime());
-        holder.avgPace.setText(runData.getAvgPace());
-        holder.distance.setText(runData.getDistance());
+        holder.time.setText(context.getString(R.string.time, runData.getTime()/3600, runData.getTime()%3600/60, runData.getTime()%3600%60));
+        holder.avgPace.setText(context.getString(R.string.avgPace, runData.getAvgPace()));
+        holder.distance.setText(context.getString(R.string.distance, runData.getDistance()));
 
         //Loads the snapshot into the image view of the card
         Glide.with(context)
                 .load(runData.getMapImageUrl())
                 .into(holder.mapImage);
 
+        //On click checks that run id and listener isn't null
+        //Passes runID in onRunClick which calls lambda in run details frag
+        //which initiates the fragment switch with the runs details displayed
+        holder.itemView.setOnClickListener(v -> {
+            String runID = runData.getID();
+            if(listener != null && runID != null){
+                listener.onRunClick(runID);
+            }
+        });
     }
 
     //Returns the the number of runs that will be displayed
@@ -62,6 +68,7 @@ public class SavedRunsAdapter extends RecyclerView.Adapter<SavedRunsAdapter.RunV
     public int getItemCount() {
         return runList.size();
     }
+
 
     public static class RunViewHolder extends RecyclerView.ViewHolder{
         private final TextView runName, runDate, time, distance, avgPace;

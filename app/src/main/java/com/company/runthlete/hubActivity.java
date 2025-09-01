@@ -144,6 +144,11 @@ public class hubActivity extends AppCompatActivity {
                     if (!(currentFragment instanceof SavedRunsFragment)) {
                         replaceFrag(new SavedRunsFragment());
                     }
+                } else if (item.getItemId() == R.id.signOut) {
+                    FirebaseAuth.getInstance().signOut();
+                    Intent i = new Intent(this, MainActivity.class);
+                    startActivity(i);
+                    finish();
                 }
                 drawerLayout.closeDrawer(GravityCompat.START);
                 return true;

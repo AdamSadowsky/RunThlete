@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class LeaderboardsDailyFragment extends Fragment {
+public class LeaderboardsFragment extends Fragment {
     private ArrayList<LeaderboardsData> leaderboardsList;
     private LeaderboardsAdapter leaderboardsAdapter;
     private FirebaseFirestore db;

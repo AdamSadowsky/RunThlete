@@ -11,6 +11,7 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +27,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
@@ -39,11 +41,15 @@ import com.google.firebase.storage.StorageReference;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TimeZone;
 
 public class PostRunFragment extends Fragment implements OnMapReadyCallback {
     private ArrayList<LatLng> runPath;
@@ -59,7 +65,7 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
     private String date;
     private FirebaseFirestore db;
     private CollectionReference runsCol;
-    private DocumentReference totalRunsDoc;
+    private DocumentReference runsDoc, totalRunsDoc, dailyTotalDoc, weeklyTotalDoc, monthlyTotalDoc, completeTotalDoc;
     private String name;
     private String defaultName;
     Button saveBtn;
@@ -81,41 +87,76 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
 
         //If user chooses to save their run this will push all their run data into firestore for them so view later
         saveBtn.setOnClickListener(e -> {
-                    fAuth = FirebaseAuth.getInstance();
-                    db = FirebaseFirestore.getInstance();
-                    userID = Objects.requireNonNull(fAuth.getCurrentUser()).getUid();
+            fAuth = FirebaseAuth.getInstance();
+            db = FirebaseFirestore.getInstance();
+            userID = Objects.requireNonNull(fAuth.getCurrentUser()).getUid();
 
-                    //Goes to users collection, then their userid document, and lastly their runs collection
-                    runsCol = db
-                            .collection("users")
-                            .document(userID)
-                            .collection("runs");
-                    //Stores all of the user saved run total stats in one document
-                    totalRunsDoc = db
-                            .collection("users")
-                            .document(userID)
-                            .collection("userInfo")
-                            .document("totalRunStats");
+            SimpleDateFormat dailyDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            dailyDateFormat.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+            String todayDate = dailyDateFormat.format(new Date());
 
-                    //Counts all of the users total runs ands sets it to a default name
-                    //if user saved run without entering a name else uses the name inputted
-                    runsCol.count()
-                            .get(AggregateSource.SERVER)
-                            .addOnSuccessListener(aggregateQuerySnapshot -> {
-                                long totalRuns = aggregateQuerySnapshot.getCount();
-                                name = Objects.requireNonNull(binding.runName.getText()).toString().trim();
-                                if (name.isEmpty()) {
-                                    defaultName = "Run #" + (totalRuns + 1);
-                                    writeToFireStore(defaultName);
-                                } else {
-                                    writeToFireStore(name);
-                                }
-                            })
-                            .addOnFailureListener(x -> {
-                                defaultName = "Run #1";
-                                Log.e("Error", "Count failed");
-                                writeToFireStore(defaultName);
-                            });
+            SimpleDateFormat weeklyDateFormat = new SimpleDateFormat("yyyy-'W'ww", Locale.US);
+            weeklyDateFormat.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+            String weekId = weeklyDateFormat.format(new Date());
+
+            SimpleDateFormat monthlyDateFormat = new SimpleDateFormat("yyyy-'M'MM", Locale.US);
+            monthlyDateFormat.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+            String monthId = monthlyDateFormat.format(new Date());
+
+            dailyTotalDoc = db
+                    .collection("dailyTotals")
+                    .document(todayDate)
+                    .collection("users")
+                    .document(userID);
+
+            weeklyTotalDoc = db
+                    .collection("weeklyTotals")
+                    .document(weekId)
+                    .collection("users")
+                    .document(userID);
+
+            monthlyTotalDoc = db
+                    .collection("monthlyTotals")
+                    .document(monthId)
+                    .collection("users")
+                    .document(userID);
+
+            completeTotalDoc = db
+                    .collection("completeTotals")
+                    .document("completeHistory")
+                    .collection("users")
+                    .document(userID);
+            //Goes to users collection, then their userid document, and lastly their runs collection
+            runsCol = db
+                    .collection("users")
+                    .document(userID)
+                    .collection("runs");
+            //Stores all of the user saved run total stats in one document
+            totalRunsDoc = db
+                    .collection("users")
+                    .document(userID)
+                    .collection("userInfo")
+                    .document("totalRunStats");
+
+            //Counts all of the users total runs ands sets it to a default name
+            //if user saved run without entering a name else uses the name inputted
+            runsCol.count()
+                    .get(AggregateSource.SERVER)
+                    .addOnSuccessListener(aggregateQuerySnapshot -> {
+                        long totalRuns = aggregateQuerySnapshot.getCount();
+                        name = Objects.requireNonNull(binding.runName.getText()).toString().trim();
+                        if (name.isEmpty()) {
+                            defaultName = "Run #" + (totalRuns + 1);
+                            writeToFireStore(defaultName);
+                        } else {
+                            writeToFireStore(name);
+                        }
+                    })
+                    .addOnFailureListener(x -> {
+                        defaultName = "Run #1";
+                        Log.e("Error", "Count failed");
+                        writeToFireStore(defaultName);
+                    });
         });
     }
 
@@ -134,6 +175,7 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
             hours         = a.getLong("hours");
             minutes       = a.getLong("minutes");
             seconds       = a.getLong("seconds");
+            runSeconds = (hours * 3600) + (minutes * 60) + seconds;
             timeTracker.setText(getString(R.string.time, hours, minutes, seconds));
             avgPace       = a.getFloat("avgPace");
             avgPaceTracker.setText(getString(R.string.avgPace, avgPace));
@@ -143,7 +185,6 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
             calorieTracker.setText(getString(R.string.calories, calories));
             steps         = a.getInt("steps");
             stepsTracker.setText(getString(R.string.steps, steps));
-            runSeconds = (hours * 3600) + (minutes * 60) + seconds;
             date = a.getString("date");
             double startLat = a.getDouble("startLat");
             double startLng = a.getDouble("startLng");
@@ -165,18 +206,38 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
 
     //Takes the data retrieved from bundle and puts it into firestore
     private void writeToFireStore(String run_name) {
+        WriteBatch batch = db.batch();
+        DocumentReference runsDoc = runsCol.document();
         //Stores all locations in an array to put in firestore and later generate the run path
         List<GeoPoint> geoPath = new ArrayList<>(runPath.size());
         for(LatLng loc: runPath) {
             geoPath.add(new GeoPoint(loc.latitude, loc.longitude));
         }
+
+        FirebaseUser user = fAuth.getCurrentUser();
+        String displayName = Objects.requireNonNull(user).getDisplayName();
+
+        updateTotalsDocument(dailyTotalDoc, displayName, userID, totalDistance, batch);
+        updateTotalsDocument(weeklyTotalDoc, displayName, userID, totalDistance, batch);
+        updateTotalsDocument(monthlyTotalDoc, displayName, userID, totalDistance, batch);
+        updateTotalsDocument(completeTotalDoc, displayName, userID, totalDistance, batch);
+
+        //Increments all the values in total run stats with new saved run data
+        Map<String, Object> totalRunStats = new HashMap<>();
+        totalRunStats.put("totalCalories", FieldValue.increment(calories));
+        totalRunStats.put("totalSteps", FieldValue.increment(steps));
+        totalRunStats.put("totalTime", FieldValue.increment(runSeconds));
+        totalRunStats.put("totalDistance", FieldValue.increment(totalDistance));
+        batch.set(totalRunsDoc, totalRunStats, SetOptions.merge());//Increments total runs doc with total run stats
+
+
         //All run data types stored for a particular run in firestore
         Map<String, Object> runStats = new HashMap<>();
         runStats.put("calories", calories);
         runStats.put("steps", steps);
-        runStats.put("time", getString(R.string.timePush, hours, minutes, seconds));
-        runStats.put("distance", getString(R.string.distancePush, totalDistance));
-        runStats.put("avgPace", getString(R.string.avgPacePush, avgPace));
+        runStats.put("time", runSeconds);
+        runStats.put("distance", totalDistance);
+        runStats.put("avgPace", avgPace);
         runStats.put("date", date);
         runStats.put("name", run_name);
         runStats.put("runPath", geoPath);
@@ -195,7 +256,6 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
                     Log.e("UploadError", "Failed to save snapshot properly. File missing or empty.");
                     return;
                 }
-                out.close();
 
                 StorageReference storageReference = FirebaseStorage.getInstance().getReference("map_snapshots/" + file.getName());
                 Uri fileUri = Uri.fromFile(file);
@@ -203,43 +263,34 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
                 storageReference.putFile(fileUri)
                         .addOnSuccessListener(taskSnapshot -> storageReference.getDownloadUrl().addOnSuccessListener(uri -> {
                                     String downloadUrl = uri.toString();
-
                                     runStats.put("mapImageUrl", downloadUrl);
+                                    batch.set(runsDoc, runStats);
+                            batch.commit()
+                                    .addOnSuccessListener(aVoid -> {
+                                        Log.d("RunFrag", "Run data submitted");
+                                        requireActivity()
+                                                .getSupportFragmentManager()
+                                                .beginTransaction()
+                                                .replace(R.id.fragment_container, new HomeFragment())
+                                                .commit();
+                                    })
+                                    .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
 
-
-                            //Increments all the values in total run stats with new saved run data
-                            totalRunsDoc.get().addOnSuccessListener(snapshotDoc -> {
-                                WriteBatch batch = db.batch();
-                                DocumentReference runsDoc = runsCol.document();
-                                batch.set(runsDoc, runStats);//Puts run stats in run doc
-                                if (!snapshotDoc.exists()) {
-                                    Map<String, Object> totalRunStats = new HashMap<>();
-                                    totalRunStats.put("totalCalories", calories);
-                                    totalRunStats.put("totalSteps", steps);
-                                    totalRunStats.put("totalTime", runSeconds);
-                                    totalRunStats.put("totalDistance", totalDistance);
-                                    batch.set(totalRunsDoc, totalRunStats);
-                                } else {
-                                    Map<String, Object> totalRunStats = new HashMap<>();
-                                    totalRunStats.put("totalCalories", FieldValue.increment(calories));
-                                    totalRunStats.put("totalSteps", FieldValue.increment(steps));
-                                    totalRunStats.put("totalTime", FieldValue.increment(runSeconds));
-                                    totalRunStats.put("totalDistance", FieldValue.increment(totalDistance));
-                                    batch.set(totalRunsDoc, totalRunStats, SetOptions.merge());//Increments total runs doc with total run stats
-                                }
-
-                                batch.commit()
-                                        .addOnSuccessListener(aVoid -> {
-                                            Log.d("RunFrag", "Run data submitted");
-                                            requireActivity()
-                                                    .getSupportFragmentManager()
-                                                    .beginTransaction()
-                                                    .replace(R.id.fragment_container, new HomeFragment())
-                                                    .commit();
-                                        })
-                                        .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
-                            });
-                        })).addOnFailureListener(e -> Log.e("Error", "Failed to upload image", e));
+                        })).addOnFailureListener(e -> {
+                            Log.e("Error", "Failed to upload image", e);
+                            runStats.put("mapImageUrl", null);
+                            batch.set(runsDoc, runStats);
+                            batch.commit()
+                                    .addOnSuccessListener(aVoid -> {
+                                        Log.d("RunFrag", "Run data submitted");
+                                        requireActivity()
+                                                .getSupportFragmentManager()
+                                                .beginTransaction()
+                                                .replace(R.id.fragment_container, new HomeFragment())
+                                                .commit();
+                                    })
+                                    .addOnFailureListener(aVoid -> Log.d("RunFrag", "Failed run data submission"));
+                        });
             } catch (IOException e) {
                 Log.e("Error", "Failed to save map image", e);
             }
@@ -366,6 +417,14 @@ public class PostRunFragment extends Fragment implements OnMapReadyCallback {
             return bitmap;
         }
         return null;
+    }
+
+    private void updateTotalsDocument(DocumentReference docRef, String name, String id, double totalDistance, WriteBatch batch){
+            Map<String, Object> update = new HashMap<>();
+            update.put("name", name);
+            update.put("id", id);
+            update.put("totalDistance", FieldValue.increment(totalDistance));
+            batch.set(docRef, update, SetOptions.merge());
     }
 
     @Override

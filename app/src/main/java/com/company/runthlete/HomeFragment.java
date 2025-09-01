@@ -28,18 +28,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import java.util.Objects;
 
-public class HomeFragment extends Fragment implements OnMapReadyCallback {
+public class HomeFragment extends Fragment{
 
-    FirebaseAuth auth;
-    FirebaseUser user;
-    private GoogleLocationTracker locationTracker;
-    private GoogleMap mMap;
     private FragmentHomeBinding binding;
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
-        binding.mapView.onCreate(savedInstanceState);
-        binding.mapView.getMapAsync(this);
         return binding.getRoot();
     }
 
@@ -54,19 +48,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 }
 
 
-        if (ActivityCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            startLocationTracking();
-        } else {
-            Toast.makeText(getActivity(), "Missing Permissions", Toast.LENGTH_SHORT).show();
-            Log.d("Debug", "Missing permissions to start activity");
-            locationPermissionLauncher.launch(new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                    });
-        }
-
             binding.runningButton.setOnClickListener(v -> {
+                if (ActivityCompat.checkSelfPermission(requireActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(getActivity(), "Missing Permissions", Toast.LENGTH_SHORT).show();
+                    Log.d("Debug", "Missing permissions to start activity");
+                    locationPermissionLauncher.launch(new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                    });
+                    return;
+                }
                     if(validateWeight()) {
                         // Get the weight from the EditText and convert to float
                         String weightStr = Objects.requireNonNull(binding.weightInput.getText()).toString().trim();
@@ -86,13 +76,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                         Toast.makeText(getActivity(), "Weight can not be left empty", Toast.LENGTH_SHORT).show();
                     }
             });
-
-            binding.logoutButton.setOnClickListener(v -> {
-                    FirebaseAuth.getInstance().signOut();
-                    Intent intent = new Intent(getActivity(), MainActivity.class);
-                    startActivity(intent);
-                    requireActivity().finish();
-            });
         }
 
         private boolean validateWeight() {
@@ -108,32 +91,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             return true;
         }
 
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-        mMap = googleMap;
-        try {
-            locationTracker.startTracking();
-        } catch(Exception e) {
-            Log.d("Debug", "Start tracking error", e);
-        }
-        Location lastKnownLocation = locationTracker.getLastKnownLocation();
-        if(lastKnownLocation != null) {
-            LatLng lastLatLng = new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(lastLatLng, 15));
-        } else {
-            Log.d("Debug", "Location is null");
-        }
-    }
-
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
                 Boolean fineLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
-                Boolean coarseLocationGranted = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
-                if (Boolean.TRUE.equals(fineLocationGranted) || Boolean.TRUE.equals(coarseLocationGranted)) {
-                    // Permissions granted: proceed with location tracking.
-                    startLocationTracking();
-                    Log.d("Debug", "Location granted");
-                } else {
+                if (Boolean.FALSE.equals(fineLocationGranted)) {
                     // Permissions denied: show a message or handle accordingly.
                     Toast.makeText(getActivity(), "This app requires location permission to function", Toast.LENGTH_SHORT).show();
                     Log.d("Debug", "Location not granted");
@@ -141,45 +102,20 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
                 }
             });
 
-    @SuppressLint("MissingPermission")
-    private void startLocationTracking() {
-        auth = FirebaseAuth.getInstance();
-        user = auth.getCurrentUser();
-        locationTracker = new GoogleLocationTracker(requireContext());
-        locationTracker.setLocationUpdateListener(location -> {
-            if (mMap != null && location != null) {
-                LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> {
-                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
-                            mMap.setMyLocationEnabled(true);
-                            mMap.getUiSettings().setMyLocationButtonEnabled(true);
-                    });
-
-                }
-            }
-        });
-    }
 
     @Override
     public void onResume() {
         super.onResume();
-        binding.mapView.onResume();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        binding.mapView.onPause();
-        if(locationTracker != null){
-            locationTracker.stopTracking();
-        }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding.mapView.onDestroy();
         binding = null;
     }
 }

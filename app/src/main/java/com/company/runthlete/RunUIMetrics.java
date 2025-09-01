@@ -242,7 +242,7 @@ public class RunUIMetrics {
                 paceView.setText(paceText);
             } else {
                 Log.d("Debug", "Ignored bad speed reading: " + pace);
-                paceView.setText("Pace: \n0.00 mph");
+                paceView.setText("0.00 mph \n pace");
             }
         }
     }

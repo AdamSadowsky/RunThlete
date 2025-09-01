@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //Navigates users to registration activty on button click
+        //Navigates users to registration activity on button click
         signUpButton.setOnClickListener(v -> {
             Intent i = new Intent(MainActivity.this, registerActivity.class);
             startActivity(i);
