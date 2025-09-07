@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <group
+    android:checkableBehavior="single">
+
+    <item
+        android:title="@string/home"
+        android:id="@+id/home"
+        android:icon="@drawable/baseline_home_24"
+        app:showAsAction="never"/>
+    <item
+        android:title="@string/progression"
+        android:id="@+id/progression"
+        android:icon="@drawable/baseline_self_improvement_24"
+        app:showAsAction="never"/>
+    <item
+        android:title="@string/groups"
+        android:id="@+id/groups"
+        android:icon="@drawable/baseline_groups_24"
+        app:showAsAction="never"/>
+    <item
+        android:title="@string/leaderboards"
+        android:id="@+id/leaderboards"
+        android:icon="@drawable/baseline_leaderboard_24"
+        app:showAsAction="never"/>
+    <item
+        android:title="@string/profile"
+        android:id="@+id/profile"
+        android:icon="@drawable/baseline_account_circle_24"
+        app:showAsAction="never"/>
+
+    </group>
+
+    <group
+        android:checkableBehavior="single">
+
+    <item android:title="">
+
+        <menu>
+            <item
+                android:title="@string/savedRuns"
+                android:id="@+id/savedRuns"
+                android:icon="@drawable/baseline_directions_run_24"
+                app:showAsAction="never"/>
+            <item
+                android:title="@string/settings"
+                android:id="@+id/settings"
+                android:icon="@drawable/baseline_settings_24"
+                app:showAsAction="never"/>
+            <item
+                android:title="@string/shop"
+                android:id="@+id/shop"
+                android:icon="@drawable/baseline_shopping_cart_24"
+                app:showAsAction="never"/>
+            <item
+                android:title="@string/signout"
+                android:id="@+id/signOut"
+                android:icon="@drawable/baseline_logout_24"
+                app:showAsAction="never"/>
+        </menu>
+
+    </item>
+
+    </group>
+
+</menu>

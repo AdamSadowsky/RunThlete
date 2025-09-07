@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Border Layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent"/> <!-- Transparent background -->
+            <stroke android:width="4dp" android:color="@color/black"/> <!-- Border width & color -->
+            <corners android:radius="28dp"/> <!-- Rounded corners (optional) -->
+        </shape>
+    </item>
+
+    <!-- Button Image Layer -->
+    <item>
+        <bitmap
+            android:gravity="center"/>
+    </item>
+</layer-list>

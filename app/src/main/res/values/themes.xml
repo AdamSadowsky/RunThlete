@@ -1,0 +1,95 @@
+<resources>
+    <!-- Base application theme -->
+    <style name="Base.Theme.RunThlete" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- App theme customization -->
+
+        <item name="android:textSize">18sp</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+    </style>
+
+    <!-- Application theme -->
+    <style name="Theme.RunThlete" parent="Base.Theme.RunThlete" />
+
+    <!-- Button Style -->
+    <style name="loginButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:background">@drawable/login_button_background</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/white</item>
+        <!-- Example customization -->
+    </style>
+
+    <style name="loginInfo" parent="Widget.MaterialComponents.TextInputEditText.FilledBox">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:background">@drawable/login_password_background</item>
+        <item name="backgroundTint">@null</item>
+    </style>
+
+    <style name="CounterTextAppearance">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:layout_marginTop">-12dp</item> <!-- Moves counter up -->
+    </style>
+
+    <style name="registerText" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/gray</item>
+        <item name="android:fontFamily">@font/sans_serif</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="captions" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="infoInput" parent="Widget.MaterialComponents.TextInputEditText.FilledBox">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColorHint">@color/gray</item>
+        <item name="android:background">@drawable/login_password_background</item>
+        <item name="backgroundTint">@null</item>
+        <item name="counterEnabled">true</item>
+    </style>
+
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_in</item>
+        <item name="android:windowExitAnimation">@anim/slide_out</item>
+    </style>
+
+    <style name="cardStyle">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:background">@drawable/card_box</item>
+        <item name="fontFamily">@font/concert_one</item>
+    </style>
+    <style name="runStyle">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:background">@drawable/card_box</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="fontFamily">@font/concert_one</item>
+    </style>
+    <style name="runBtn">
+        <item name="android:background">@drawable/login_button_background</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+    <style name="saveBtn">
+        <item name="android:background">@drawable/login_button_background</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+    <style name="leaderBoardCardStyle">
+        <item name="fontFamily">@font/days_one</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="background">@drawable/leaderboards_box</item>
+    </style>
+</resources>

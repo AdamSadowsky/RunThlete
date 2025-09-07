@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".PostRunFragment"
+    android:background="@drawable/login_background">
+
+    <!-- Small MapView (Fixed Height) -->
+    <com.google.android.gms.maps.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/timeTracker"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="@drawable/running_boxes"
+        android:text="@string/time"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/mapView" />
+
+    <TextView
+        android:id="@+id/avgPaceTracker"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="@drawable/running_boxes"
+        android:text="@string/avgPace"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/distanceTracker" />
+
+    <TextView
+        android:id="@+id/distanceTracker"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="@drawable/running_boxes"
+        android:text="@string/distance"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/timeTracker" />
+
+    <TextView
+        android:id="@+id/calorieTracker"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginEnd="205dp"
+        android:background="@drawable/running_boxes"
+        android:text="@string/calories"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/avgPaceTracker"
+        tools:layout_editor_absoluteY="525dp" />
+
+    <TextView
+        android:id="@+id/stepsTracker"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginStart="205dp"
+        android:background="@drawable/running_boxes"
+        android:text="@string/steps"
+        android:textAlignment="center"
+        android:textAllCaps="true"
+        android:textColor="@color/white"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/avgPaceTracker"
+        tools:layout_editor_absoluteY="525dp" />
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/runName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="50dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="50dp"
+        style="@style/infoInput"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:hint="New Run"
+        android:textSize="28sp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/calorieTracker" />
+
+    <Button
+        android:id="@+id/save"
+        style="@style/loginButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/save"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/runName" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
